@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Credencial UMG Basic Rover 2.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+
+        .credencial {
+            width: 800px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #aa96da;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+        }
+
+        .title {
+            margin-top: 40px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .content {
+            padding: 30px;
+            display: flex;
+        }
+
+        .left {
+            flex: 1;
+            padding-right: 20px;
+            border-right: 1px solid #ddd;
+        }
+
+        .right {
+            flex: 1;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+        }
+
+        .qr {
+            width: 150px;
+            height: 150px;
+            margin-top: 20px;
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 18px;
+        }
+
+        .footer {
+            background-color: #fcbad3;
+            color: #333;
+            padding: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="credencial">
+        <div class="header">
+            <img src="https://www.umg.edu.gt/wp-content/uploads/2023/08/footer-LOGO-CIRCULAR-UMG.png" class="logo"
+                alt="Logo UMG">
+            <div class="title">UMG Basic Rover 2.0</div>
+            <div class="subtitle">Credencial de Aspirante Conductor</div>
+        </div>
+        <div class="content">
+            <div class="left">
+                <div class="field">
+                    <div class="label">Nombre:</div>
+                    <div class="value">{{ usuario.nombre }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">Correo Electrónico:</div>
+                    <div class="value">{{ usuario.correo }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">Nickname:</div>
+                    <div class="value">{{ usuario.nickname }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">ID de Conductor:</div>
+                    <div class="value">{{ usuario.id_usuario }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">Fecha de Expedición:</div>
+                    <div class="value">{{ fecha }}</div>
+                </div>
+            </div>
+            <div class="right">
+                <!-- En credencial.html, reemplazar la línea del avatar -->
+                <img src="data:image/jpeg;base64,{{ usuario.avatar }}" class="avatar" alt="Avatar">
+                <img src="data:image/png;base64,{{ qr_code }}" class="qr" alt="Código QR">
+            </div>
+        </div>
+
+        {% if mostrar_botones_impresion %}
+        <div style="text-align: center; margin-top: 20px; position: fixed; bottom: 20px; left: 0; right: 0;">
+            <button onclick="window.print()"
+                style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">Imprimir
+                Credencial</button>
+            <button onclick="window.close()"
+                style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Cerrar</button>
+        </div>
+
+        <style>
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                button {
+                    display: none;
+                }
+            }
+        </style>
+        {% endif %}
+
+        <div class="footer">
+            Esta credencial es personal e intransferible. Se requiere para acceder a las estaciones de entrenamiento de
+            UMG Basic Rover 2.0.
+        </div>
+    </div>
+</body>
+
+</html>

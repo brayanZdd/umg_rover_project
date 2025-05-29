@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="text-center">¡Registro Exitoso!</h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #4CAF50;"></i>
+                </div>
+
+                <h4>Hola, {{ usuario.nombre }}</h4>
+                <p class="lead">Tu cuenta ha sido creada correctamente.</p>
+
+                <div class="alert alert-info">
+                    <p><strong>Información importante:</strong></p>
+                    <p>Para acceder al sistema UMG Basic Rover 2.0, necesitarás la credencial que puedes descargar a
+                        continuación.</p>
+                </div>
+
+                <div class="d-grid gap-2 col-md-8 mx-auto mt-4">
+                    <a href="{{ pdf_url }}" class="btn btn-primary btn-lg" target="_blank">
+                        <i class="bi bi-download"></i> Descargar Credencial
+                    </a>
+
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary mt-2">
+                        Ir a la página de inicio de sesión
+                    </a>
+                </div>
+
+                <div class="mt-4">
+                    <h5>Detalles del envío de correo:</h5>
+                    <p>{{ email_result }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

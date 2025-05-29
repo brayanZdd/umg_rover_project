@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .usuarios-activos-panel {
+        background: linear-gradient(135deg, #036702, #0f9802);
+        color: rgb(255, 255, 255);
+        border-radius: 10px;
+        padding: 0;
+        height: 600px;
+        overflow-y: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 20px;
+    }
+
+    .usuarios-activos-header {
+        background: rgba(17, 0, 37, 0.064);
+        padding: 15px 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        text-align: center;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .usuarios-activos-content {
+        padding: 15px;
+        height: 90%;
+        overflow-y: auto;
+        /* ← agrega fondo oscuro */
+        color: rgb(0, 5, 58);
+    }
+
+    .usuarios-activos-content .table {
+        color: rgb(0, 0, 0);
+        margin-bottom: 0;
+    }
+
+    .usuarios-activos-content .table th {
+        color: rgb(255, 255, 255);
+        border-color: rgba(73, 0, 0, 0.066);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .usuarios-activos-content .table td {
+        color: rgb(0, 0, 0);
+        border-color: rgba(28, 0, 79, 0.964);
+    }
+
+    .usuarios-activos-content .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(203, 0, 0, 0.271);
+    }
+
+    .usuarios-activos-content .table-striped tbody tr:hover {
+        background-color: rgb(0, 255, 183);
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3>Dashboard de Administración</h3>
+            </div>
+            <div class="card-body">
+                <h4>Bienvenido al panel de administración del UMG Basic Rover 2.0</h4>
+                <p>Desde aquí puedes monitorear y administrar todos los aspectos del sistema.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Actividad Reciente</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Avatar</th>
+                                <th>Usuario</th>
+                                <th>Fecha de Ingreso</th>
+                                <th>Fecha de Salida</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ingreso in ingresos %}
+                            <tr>
+                                <td>{{ ingreso.id_ingreso }}</td>
+                                <td>
+                                    {% if ingreso.avatar %}
+                                    <img src="data:image/png;base64,{{ ingreso.avatar }}"
+                                        alt="Avatar de {{ ingreso.nickname }}" class="rounded-circle"
+                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white"
+                                        style="width: 40px; height: 40px; font-size: 12px; font-weight: bold;">
+                                        {{ ingreso.nickname|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ingreso.nickname }}</td>
+                                <td>{{ ingreso.fecha_ingreso }}</td>
+                                <td>{{ ingreso.fecha_salida|default:"-" }}</td>
+                                <td>
+                                    {% if ingreso.fecha_salida %}
+                                    <span class="badge bg-success">Completado</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Activo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay registros de actividad</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="usuarios-activos-panel">
+            <div class="usuarios-activos-header">
+                <span>Usuarios Activos</span>
+                <span class="badge bg-light text-dark">{{ usuarios_activos|length }}</span>
+            </div>
+            <div class="usuarios-activos-content">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Usuario</th>
+                                <th>Grupo</th>
+                                <th>Fecha de Ingreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios_activos %}
+                            <tr>
+                                <td>
+                                    {% if usuario.avatar %}
+                                    <img src="data:image/png;base64,{{ usuario.avatar }}"
+                                        alt="Avatar de {{ usuario.nickname }}" class="rounded-circle"
+                                        style="width: 46px; height: 46px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-dark"
+                                        style="width: 46px; height: 46px; font-size: 11px; font-weight: bold;">
+                                        {{ usuario.nickname|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usuario.nickname }}</td>
+                                <td>{{ usuario.grupo_nombre }}</td>
+                                <td>{{ usuario.fecha_ingreso }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay usuarios activos</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Estadísticas</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cantidad de Usuarios</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grupo in estadisticas_grupos %}
+                            <tr>
+                                <td>{{ grupo.cantidad_usuarios }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">No hay datos disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

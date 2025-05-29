@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMG Basic Rover 2.0 - Credencial</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #003803;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #ffffff;
+            border-top: 1px solid #eee;
+            background-color: #362506;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #003803;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #003803;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>UMG Basic Rover 2.0</h1>
+        </div>
+        <div class="content">
+            <p>Hola <strong>{{ nombre }}</strong>,</p>
+
+            <p>¡Tu registro en la plataforma UMG Basic Rover 2.0 ha sido exitoso!</p>
+
+            <p>Hemos adjuntado tu credencial de acceso en formato PDF a este correo. Esta credencial contiene
+                información importante para acceder al sistema.</p>
+
+            <div class="info-box">
+                <p style="margin-top: 0;"><strong>Datos de tu cuenta:</strong></p>
+                <ul>
+                    <li>Nickname: {{ nickname }}</li>
+                    <li>ID: {{ usuario_id }}</li>
+                    <li>Fecha de emisión: {{ fecha }}</li>
+                </ul>
+            </div>
+
+            <p>Recuerda guardar este documento en un lugar seguro, ya que lo necesitarás para acceder a las estaciones
+                de entrenamiento.</p>
+
+            <p>Si tienes alguna pregunta o problema para acceder al sistema, no dudes en contactarnos.</p>
+
+            <div class="divider"></div>
+
+            <p>Saludos,<br>
+                El equipo de UMG Basic Rover 2.0 Grupo 7</p>
+        </div>
+        <div class="footer">
+            <p>© {% now "Y" %} Universidad Mariano Gálvez de Guatemala. Todos los derechos reservados.</p>
+            <p>Proyecto Final de Compiladores</p>
+        </div>
+    </div>
+</body>
+
+</html>

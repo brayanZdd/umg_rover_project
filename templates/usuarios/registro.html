@@ -1,0 +1,648 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para validación en tiempo real */
+    .form-control {
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+    }
+
+    .error-message {
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Estilo para el botón submit cuando está deshabilitado */
+    #submit-btn:disabled {
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Mejorar el contraste de los mensajes de error */
+    .text-danger {
+        color: #d32f2f !important;
+        font-weight: 500;
+    }
+
+    /* Añadir iconos visuales para validación */
+    .form-control.valid {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%234caf50' d='m2.3 6.73.8.8 3.0-3.0-.8-.8-2.2 2.2-1.0-1.0-.8.8z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        padding-right: calc(1.5em + 0.75rem);
+    }
+
+    .form-control.invalid {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 2.4 2.4M8.2 4.6l-2.4 2.4'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        padding-right: calc(1.5em + 0.75rem);
+    }
+
+    /* Animación suave para cambios de color */
+    .form-control {
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Mostrar mensajes -->
+{% if messages %}
+<div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+        {% for message in messages %}
+        <div
+            class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show">
+            {{ message|safe }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center py-3">
+                <h3>Registro de Aspirante Conductor</h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" id="registro-form">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_nombre" class="form-label">Nombre</label>
+                        <input type="text" name="nombre" id="id_nombre" class="form-control" required>
+                        {% if form.nombre.errors %}
+                        <div class="text-danger">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_correo" class="form-label">Correo electrónico</label>
+                            <input type="email" name="correo" id="id_correo" class="form-control" required>
+                            {% if form.correo.errors %}
+                            <div class="text-danger">{{ form.correo.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_confirmar_correo" class="form-label">Confirmar correo</label>
+                            <input type="email" name="confirmar_correo" id="id_confirmar_correo" class="form-control"
+                                required>
+                            {% if form.confirmar_correo.errors %}
+                            <div class="text-danger">{{ form.confirmar_correo.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_telefono" class="form-label">Número de teléfono</label>
+                            <input type="tel" name="telefono" id="id_telefono" class="form-control" required>
+                            {% if form.telefono.errors %}
+                            <div class="text-danger">{{ form.telefono.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_confirmar_telefono" class="form-label">Confirmar teléfono</label>
+                            <input type="tel" name="confirmar_telefono" id="id_confirmar_telefono" class="form-control"
+                                required>
+                            {% if form.confirmar_telefono.errors %}
+                            <div class="text-danger">{{ form.confirmar_telefono.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_nickname" class="form-label">Nickname</label>
+                        <input type="text" name="nickname" id="id_nickname" class="form-control" required>
+                        {% if form.nickname.errors %}
+                        <div class="text-danger">{{ form.nickname.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_password" class="form-label">Contraseña</label>
+                            <input type="password" name="password" id="id_password" class="form-control" required>
+                            {% if form.password.errors %}
+                            <div class="text-danger">{{ form.password.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_confirmar_password" class="form-label">Confirmar contraseña</label>
+                            <input type="password" name="confirmar_password" id="id_confirmar_password"
+                                class="form-control" required>
+                            {% if form.confirmar_password.errors %}
+                            <div class="text-danger">{{ form.confirmar_password.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Selecciona la opción para tu avatar </label>
+
+                        <div class="d-flex mb-2 flex-wrap">
+                            <div class="form-check me-3 mb-2">
+                                <input class="form-check-input" type="radio" name="avatar_option" id="option_upload"
+                                    value="upload" checked>
+                                <label class="form-check-label" for="option_upload">
+                                    Subir imagen
+                                </label>
+                            </div>
+                            <div class="form-check me-3 mb-2">
+                                <input class="form-check-input" type="radio" name="avatar_option" id="option_camera"
+                                    value="camera">
+                                <label class="form-check-label" for="option_camera">
+                                    Tomar foto
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="avatar_option" id="option_none"
+                                    value="none">
+                                <label class="form-check-label" for="option_none">
+                                    Avatar automático
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="upload_container">
+                            <input type="file" name="avatar" id="id_avatar" class="form-control" accept="image/*">
+                            <div class="form-text">Sube una imagen para tu avatar</div>
+                        </div>
+
+                        <div id="camera_container" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <video id="camera_preview" width="100%" autoplay></video>
+                                </div>
+                                <div class="col-md-6">
+                                    <canvas id="camera_canvas" class="d-none"></canvas>
+                                    <img id="captured_image" class="img-fluid rounded mb-2"
+                                        style="display: none; max-height: 200px;">
+                                    <input type="hidden" name="camera_image_data" id="camera_image_data">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" id="capture_btn" class="btn btn-info">
+                                    <i class="bi bi-camera"></i> Capturar
+                                </button>
+                                <button type="button" id="retake_btn" class="btn btn-outline-secondary"
+                                    style="display: none;">
+                                    <i class="bi bi-arrow-repeat"></i> Volver a tomar
+                                </button>
+                            </div>
+                            <div id="camera-status" class="mt-2 text-muted">
+                                Captura tu foto para el avatar
+                            </div>
+                        </div>
+
+                        <div id="none_container" class="d-none">
+                            <div class="alert alert-info">
+                                <i class="bi bi-person-circle"></i> Se generará automáticamente un avatar con tu
+                                Nickname.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary py-2" id="submit-btn">Registrarme</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                ¿Ya tienes una cuenta? <a href="{% url 'login' %}">Iniciar sesión</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Referencias a todos los campos
+        const nombreInput = document.getElementById('id_nombre');
+        const correoInput = document.getElementById('id_correo');
+        const confirmarCorreoInput = document.getElementById('id_confirmar_correo');
+        const telefonoInput = document.getElementById('id_telefono');
+        const confirmarTelefonoInput = document.getElementById('id_confirmar_telefono');
+        const nicknameInput = document.getElementById('id_nickname');
+        const passwordInput = document.getElementById('id_password');
+        const confirmarPasswordInput = document.getElementById('id_confirmar_password');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Función para validar email
+        function esEmailValido(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Función para validar teléfono (exactamente 8 dígitos)
+        function esTelefonoValido(telefono) {
+            const telefonoRegex = /^\d{8}$/;
+            return telefonoRegex.test(telefono);
+        }
+
+        // Función para aplicar estilos de validación
+        function aplicarEstiloValidacion(input, esValido, mensaje = '') {
+            if (esValido) {
+                input.style.borderColor = '#4caf50';
+                input.style.backgroundColor = '#e8f5e8';
+                input.style.boxShadow = '0 0 0 0.25rem rgba(76, 175, 80, 0.25)';
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+            } else {
+                input.style.borderColor = '#f44336';
+                input.style.backgroundColor = '#ffebee';
+                input.style.boxShadow = '0 0 0 0.25rem rgba(244, 67, 54, 0.25)';
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+            }
+
+            // Remover mensaje de error anterior
+            const errorAnterior = input.parentNode.querySelector('.error-message');
+            if (errorAnterior) {
+                errorAnterior.remove();
+            }
+
+            // Agregar mensaje de error si hay uno
+            if (!esValido && mensaje) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message text-danger mt-1';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.textContent = mensaje;
+                input.parentNode.appendChild(errorDiv);
+            }
+        }
+
+        // Función para restablecer estilos
+        function restablecerEstilo(input) {
+            input.style.borderColor = '';
+            input.style.backgroundColor = '';
+            input.style.boxShadow = '';
+            input.classList.remove('valid', 'invalid');
+
+            const errorAnterior = input.parentNode.querySelector('.error-message');
+            if (errorAnterior) {
+                errorAnterior.remove();
+            }
+        }
+
+        // Función para verificar si todos los campos son válidos
+        function verificarFormularioValido() {
+            const nombre = nombreInput.value.trim();
+            const correo = correoInput.value.trim();
+            const confirmarCorreo = confirmarCorreoInput.value.trim();
+            const telefono = telefonoInput.value.trim();
+            const confirmarTelefono = confirmarTelefonoInput.value.trim();
+            const nickname = nicknameInput.value.trim();
+            const password = passwordInput.value;
+            const confirmarPassword = confirmarPasswordInput.value;
+
+            const todosValidos =
+                nombre.length >= 2 &&
+                esEmailValido(correo) &&
+                correo === confirmarCorreo &&
+                esTelefonoValido(telefono) &&
+                telefono === confirmarTelefono &&
+                nickname.length >= 3 &&
+                password.length >= 6 &&
+                password === confirmarPassword;
+
+            submitBtn.disabled = !todosValidos;
+
+            if (todosValidos) {
+                submitBtn.style.backgroundColor = '#4caf50';
+                submitBtn.style.opacity = '1';
+            } else {
+                submitBtn.style.backgroundColor = '#ccc';
+                submitBtn.style.opacity = '0.6';
+            }
+        }
+
+        // Validación del nombre
+        nombreInput.addEventListener('input', function () {
+            const valor = this.value.trim();
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor.length >= 2) {
+                aplicarEstiloValidacion(this, true);
+            } else {
+                aplicarEstiloValidacion(this, false, 'El nombre debe tener al menos 2 caracteres');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación del correo
+        correoInput.addEventListener('input', function () {
+            const valor = this.value.trim();
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (esEmailValido(valor)) {
+                aplicarEstiloValidacion(this, true);
+                // Revalidar confirmación de correo
+                if (confirmarCorreoInput.value.trim().length > 0) {
+                    confirmarCorreoInput.dispatchEvent(new Event('input'));
+                }
+            } else {
+                aplicarEstiloValidacion(this, false, 'Introduce un correo electrónico válido');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación de confirmación de correo
+        confirmarCorreoInput.addEventListener('input', function () {
+            const valor = this.value.trim();
+            const correoOriginal = correoInput.value.trim();
+
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor === correoOriginal && esEmailValido(correoOriginal)) {
+                aplicarEstiloValidacion(this, true);
+            } else {
+                aplicarEstiloValidacion(this, false, 'Los correos electrónicos no coinciden');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación del teléfono
+        telefonoInput.addEventListener('input', function () {
+            // Permitir solo números
+            this.value = this.value.replace(/\D/g, '');
+
+            const valor = this.value;
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (esTelefonoValido(valor)) {
+                aplicarEstiloValidacion(this, true);
+                // Revalidar confirmación de teléfono
+                if (confirmarTelefonoInput.value.length > 0) {
+                    confirmarTelefonoInput.dispatchEvent(new Event('input'));
+                }
+            } else {
+                aplicarEstiloValidacion(this, false, 'El teléfono debe tener exactamente 8 dígitos');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación de confirmación de teléfono
+        confirmarTelefonoInput.addEventListener('input', function () {
+            // Permitir solo números
+            this.value = this.value.replace(/\D/g, '');
+
+            const valor = this.value;
+            const telefonoOriginal = telefonoInput.value;
+
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor === telefonoOriginal && esTelefonoValido(telefonoOriginal)) {
+                aplicarEstiloValidacion(this, true);
+            } else {
+                aplicarEstiloValidacion(this, false, 'Los números de teléfono no coinciden');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación del nickname
+        nicknameInput.addEventListener('input', function () {
+            const valor = this.value.trim();
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor.length >= 3) {
+                aplicarEstiloValidacion(this, true);
+            } else {
+                aplicarEstiloValidacion(this, false, 'El nickname debe tener 3 a 12 caracteres');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación de la contraseña
+        passwordInput.addEventListener('input', function () {
+            const valor = this.value;
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor.length >= 6) {
+                aplicarEstiloValidacion(this, true);
+                // Revalidar confirmación de contraseña
+                if (confirmarPasswordInput.value.length > 0) {
+                    confirmarPasswordInput.dispatchEvent(new Event('input'));
+                }
+            } else {
+                aplicarEstiloValidacion(this, false, 'La contraseña debe tener al menos 6 caracteres');
+            }
+            verificarFormularioValido();
+        });
+
+        // Validación de confirmación de contraseña
+        confirmarPasswordInput.addEventListener('input', function () {
+            const valor = this.value;
+            const passwordOriginal = passwordInput.value;
+
+            if (valor.length === 0) {
+                restablecerEstilo(this);
+            } else if (valor === passwordOriginal && passwordOriginal.length >= 6) {
+                aplicarEstiloValidacion(this, true);
+            } else {
+                aplicarEstiloValidacion(this, false, 'Las contraseñas no coinciden');
+            }
+            verificarFormularioValido();
+        });
+
+        // Inicializar estado del botón
+        submitBtn.disabled = true;
+        submitBtn.style.backgroundColor = '#ccc';
+        submitBtn.style.opacity = '0.6';
+
+        // Prevenir envío si hay errores
+        document.getElementById('registro-form').addEventListener('submit', function (e) {
+            const errores = document.querySelectorAll('.error-message');
+            if (errores.length > 0) {
+                e.preventDefault();
+                alert('Por favor, corrige los errores antes de continuar');
+            }
+        });
+
+        // ===== CÓDIGO DE LA CÁMARA (ORIGINAL) =====
+        const registroForm = document.getElementById('registro-form');
+        const avatarOptions = document.querySelectorAll('input[name="avatar_option"]');
+        const uploadContainer = document.getElementById('upload_container');
+        const cameraContainer = document.getElementById('camera_container');
+        const noneContainer = document.getElementById('none_container');
+        const cameraPreview = document.getElementById('camera_preview');
+        const cameraCanvas = document.getElementById('camera_canvas');
+        const capturedImage = document.getElementById('captured_image');
+        const captureBtn = document.getElementById('capture_btn');
+        const retakeBtn = document.getElementById('retake_btn');
+        const cameraImageData = document.getElementById('camera_image_data');
+        const avatarInput = document.getElementById('id_avatar');
+        const cameraStatus = document.getElementById('camera-status');
+
+        let stream = null;
+        let hasCapture = false;
+
+        // Cambiar entre opciones de subir/tomar foto/sin imagen
+        avatarOptions.forEach(function (option) {
+            option.addEventListener('change', function () {
+                if (this.value === 'upload') {
+                    uploadContainer.classList.remove('d-none');
+                    cameraContainer.classList.add('d-none');
+                    noneContainer.classList.add('d-none');
+                    stopCamera();
+                    hasCapture = false;
+                } else if (this.value === 'camera') {
+                    uploadContainer.classList.add('d-none');
+                    cameraContainer.classList.remove('d-none');
+                    noneContainer.classList.add('d-none');
+                    startCamera();
+                } else if (this.value === 'none') {
+                    uploadContainer.classList.add('d-none');
+                    cameraContainer.classList.add('d-none');
+                    noneContainer.classList.remove('d-none');
+                    stopCamera();
+                    hasCapture = false;
+                }
+            });
+        });
+
+        // Iniciar la cámara
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (mediaStream) {
+                        stream = mediaStream;
+                        cameraPreview.srcObject = mediaStream;
+                        capturedImage.style.display = 'none';
+                        cameraPreview.style.display = 'block';
+                        captureBtn.style.display = 'inline-block';
+                        retakeBtn.style.display = 'none';
+                    })
+                    .catch(function (error) {
+                        console.error('Error al acceder a la cámara:', error);
+                        alert('No se pudo acceder a la cámara. Por favor, verifica los permisos.');
+                        // Si hay error, volver a la opción de subir imagen
+                        document.getElementById('option_upload').checked = true;
+                        uploadContainer.classList.remove('d-none');
+                        cameraContainer.classList.add('d-none');
+                        noneContainer.classList.add('d-none');
+                    });
+            } else {
+                alert('Tu navegador no soporta la captura de cámara. Por favor, sube una imagen.');
+                document.getElementById('option_upload').checked = true;
+                uploadContainer.classList.remove('d-none');
+                cameraContainer.classList.add('d-none');
+                noneContainer.classList.add('d-none');
+            }
+        }
+
+        // Detener la cámara
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        // Capturar foto
+        captureBtn.addEventListener('click', function () {
+            const context = cameraCanvas.getContext('2d');
+
+            // Ajustar el tamaño del canvas a la resolución de la cámara
+            cameraCanvas.width = cameraPreview.videoWidth;
+            cameraCanvas.height = cameraPreview.videoHeight;
+
+            // Dibujar la imagen en el canvas
+            context.drawImage(cameraPreview, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+            // Convertir a base64
+            const imageData = cameraCanvas.toDataURL('image/jpeg', 0.8);
+
+            // Mostrar la imagen capturada
+            capturedImage.src = imageData;
+            capturedImage.style.display = 'block';
+            cameraPreview.style.display = 'none';
+
+            // Guardar los datos en el campo oculto
+            cameraImageData.value = imageData;
+
+            // Cambiar botones
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            cameraStatus.textContent = "Foto capturada correctamente";
+            cameraStatus.className = "mt-2 text-success";
+
+            // Indicar que hay una captura
+            hasCapture = true;
+        });
+
+        // Volver a tomar la foto
+        retakeBtn.addEventListener('click', function () {
+            capturedImage.style.display = 'none';
+            cameraPreview.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+            cameraImageData.value = '';
+            cameraStatus.textContent = "Captura tu foto para el avatar";
+            cameraStatus.className = "mt-2 text-muted";
+
+            // Indicar que no hay captura
+            hasCapture = false;
+        });
+
+        // Validar formulario antes de enviar (solo cámara)
+        registroForm.addEventListener('submit', function (e) {
+            // Verificar la opción seleccionada
+            const usingCamera = document.getElementById('option_camera').checked;
+            const usingNone = document.getElementById('option_none').checked;
+
+            if (usingCamera && !hasCapture) {
+                // Si está usando cámara pero no ha tomado foto
+                e.preventDefault();
+                alert('Por favor, captura una foto antes de continuar');
+                return false;
+            }
+
+            if (!usingCamera && !usingNone && avatarInput.files.length === 0) {
+                // Si está subiendo imagen pero no ha seleccionado archivo
+                // Continuamos de todas formas, ya que el avatar es opcional
+                console.log('No se ha seleccionado un archivo de imagen');
+            }
+
+            // Si está usando "sin imagen", asegurar que los campos de imagen estén vacíos
+            if (usingNone) {
+                cameraImageData.value = '';
+                avatarInput.value = '';
+                console.log('Opción "sin imagen" seleccionada, se generará avatar automático');
+            }
+
+            // Detener la cámara
+            stopCamera();
+        });
+
+        // Limpiar al salir de la página
+        window.addEventListener('beforeunload', function () {
+            stopCamera();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,775 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .simulator-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 200px);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .simulator-header {
+        background-color: #aa96da;
+        padding: 15px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .simulator-title {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .simulator-main {
+        flex: 1;
+        display: flex;
+        background-color: #f5f5f5;
+        position: relative;
+    }
+
+    .simulator-controls {
+        width: 250px;
+        background-color: #333;
+        color: white;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .control-section {
+        margin-bottom: 20px;
+    }
+
+    .control-title {
+        font-size: 1.1rem;
+        color: #a8d8ea;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #555;
+        padding-bottom: 5px;
+    }
+
+    .control-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+
+    .control-btn {
+        background-color: #46d4df;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .control-btn:hover {
+        background-color: #a8d8ea;
+    }
+
+    .control-btn.primary {
+        grid-column: span 3;
+        background-color: #aa96da;
+    }
+
+    .control-btn.secondary {
+        background-color: #fcbad3;
+    }
+
+    .control-slider {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .simulator-area {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rover {
+        width: 50px;
+        height: 60px;
+        background-color: #aa96da;
+        border-radius: 8px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.5s ease;
+    }
+
+    .rover:before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-bottom: 15px solid #aa96da;
+    }
+
+    .path-marker {
+        width: 5px;
+        height: 5px;
+        background-color: rgba(170, 150, 218, 0.5);
+        border-radius: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+    }
+
+    .connection-status {
+        display: flex;
+        align-items: center;
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #555;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-connected {
+        background-color: #4CAF50;
+    }
+
+    .status-disconnected {
+        background-color: #F44336;
+    }
+
+    .connection-info {
+        font-size: 0.9rem;
+        color: #ddd;
+    }
+
+    .grid-line {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .grid-line-h {
+        width: 100%;
+        height: 1px;
+    }
+
+    .grid-line-v {
+        height: 100%;
+        width: 1px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="simulator-container">
+    <div class="simulator-header">
+        <h4 class="simulator-title">Simulador del UMG Basic Rover 2.0</h4>
+        <div>
+            <button id="back-to-editor" class="btn btn-sm btn-light">
+                <i class="bi bi-arrow-left"></i> Volver al Editor
+            </button>
+            <button id="connect-rover" class="btn btn-sm btn-success">
+                <i class="bi bi-wifi"></i> Conectar Rover
+            </button>
+        </div>
+    </div>
+
+    <div class="simulator-main">
+        <div class="simulator-controls">
+            <div class="control-section">
+                <h5 class="control-title">Control Manual</h5>
+                <div class="control-buttons">
+                    <!-- Fila superior -->
+                    <button class="control-btn" data-command="G"><i class="bi bi-arrow-up-left"></i></button>
+                    <button class="control-btn" data-command="F"><i class="bi bi-arrow-up"></i></button>
+                    <button class="control-btn" data-command="I"><i class="bi bi-arrow-up-right"></i></button>
+
+                    <!-- Fila media -->
+                    <button class="control-btn" data-command="L"><i class="bi bi-arrow-left"></i></button>
+                    <button class="control-btn" data-command="S"><i class="bi bi-stop-fill"></i></button>
+                    <button class="control-btn" data-command="R"><i class="bi bi-arrow-right"></i></button>
+
+                    <!-- Fila inferior -->
+                    <button class="control-btn" data-command="H"><i class="bi bi-arrow-down-left"></i></button>
+                    <button class="control-btn" data-command="B"><i class="bi bi-arrow-down"></i></button>
+                    <button class="control-btn" data-command="J"><i class="bi bi-arrow-down-right"></i></button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h5 class="control-title">Controles Adicionales</h5>
+                <div class="control-buttons">
+                    <button class="control-btn secondary" data-command="V"><i class="bi bi-volume-up"></i>
+                        Bocina</button>
+                    <button class="control-btn secondary" data-command="W"><i class="bi bi-lightbulb"></i> Luz
+                        ON</button>
+                    <button class="control-btn secondary" data-command="w"><i class="bi bi-lightbulb-off"></i> Luz
+                        OFF</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h5 class="control-title">Velocidad</h5>
+                <input type="range" class="control-slider" id="speed-slider" min="0" max="9" value="5">
+                <div class="d-flex justify-content-between">
+                    <span>Lento</span>
+                    <span id="speed-value">5</span>
+                    <span>Rápido</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h5 class="control-title">Programas</h5>
+                <div class="d-grid gap-2">
+                    <button class="control-btn primary" id="load-program"><i class="bi bi-code-slash"></i> Cargar desde
+                        Editor</button>
+                    <button class="control-btn primary" id="execute-program"><i class="bi bi-play-fill"></i> Ejecutar
+                        Programa</button>
+                </div>
+            </div>
+
+            <div class="connection-status">
+                <div class="status-indicator status-disconnected" id="connection-indicator"></div>
+                <div class="connection-info" id="connection-info">Desconectado</div>
+            </div>
+        </div>
+
+        <div class="simulator-area" id="simulator-area">
+            <!-- Cuadrícula de fondo -->
+            <div id="grid-container"></div>
+
+            <!-- Rover -->
+            <div class="rover" id="rover"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Referencias a elementos DOM
+        const simulatorArea = document.getElementById('simulator-area');
+        const rover = document.getElementById('rover');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
+        const connectionIndicator = document.getElementById('connection-indicator');
+        const connectionInfo = document.getElementById('connection-info');
+        const connectRoverBtn = document.getElementById('connect-rover');
+        const backToEditorBtn = document.getElementById('back-to-editor');
+        const executeProgram = document.getElementById('execute-program');
+        const loadProgram = document.getElementById('load-program');
+
+        // Añadir cuadrícula de fondo
+        const gridContainer = document.getElementById('grid-container');
+        function createGrid() {
+            const areaWidth = simulatorArea.clientWidth;
+            const areaHeight = simulatorArea.clientHeight;
+            const gridSize = 50; // Tamaño de cada cuadro de la cuadrícula
+
+            // Limpiar cuadrícula anterior
+            gridContainer.innerHTML = '';
+
+            // Crear líneas horizontales
+            for (let y = 0; y <= areaHeight; y += gridSize) {
+                const line = document.createElement('div');
+                line.className = 'grid-line grid-line-h';
+                line.style.top = `${y}px`;
+                gridContainer.appendChild(line);
+            }
+
+            // Crear líneas verticales
+            for (let x = 0; x <= areaWidth; x += gridSize) {
+                const line = document.createElement('div');
+                line.className = 'grid-line grid-line-v';
+                line.style.left = `${x}px`;
+                gridContainer.appendChild(line);
+            }
+        }
+
+        // Crear cuadrícula inicial
+        createGrid();
+
+        // Actualizar cuadrícula al cambiar tamaño de ventana
+        window.addEventListener('resize', createGrid);
+
+        // Estado del rover
+        let roverState = {
+            x: simulatorArea.clientWidth / 2,
+            y: simulatorArea.clientHeight / 2,
+            direction: 0, // En grados (0 = hacia arriba)
+            speed: 5,
+            connected: false
+        };
+
+        // Actualizar posición del rover visualmente
+        function updateRoverPosition() {
+            rover.style.transform = `translate(${roverState.x}px, ${roverState.y}px) rotate(${roverState.direction}deg)`;
+        }
+
+        // Inicializar posición
+        updateRoverPosition();
+
+        // Manejar eventos de control de velocidad
+        speedSlider.addEventListener('input', function () {
+            const newSpeed = parseInt(this.value);
+            roverState.speed = newSpeed;
+            speedValue.textContent = newSpeed;
+
+            // Si está conectado, enviar comando de velocidad al rover
+            if (roverState.connected) {
+                sendCommand(newSpeed.toString());
+            }
+        });
+
+        // Función para enviar comandos al servidor
+        async function sendCommand(command) {
+            // Guardar una marca en el camino
+            const pathMarker = document.createElement('div');
+            pathMarker.className = 'path-marker';
+            pathMarker.style.left = `${roverState.x}px`;
+            pathMarker.style.top = `${roverState.y}px`;
+            simulatorArea.appendChild(pathMarker);
+
+            // Si no está conectado al rover real, simular movimiento
+            if (!roverState.connected) {
+                simulateMovement(command);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/send-command/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        command: command
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('Error al enviar comando:', data.message);
+
+                    // Si falla la conexión, cambiar al modo simulación
+                    roverState.connected = false;
+                    updateConnectionStatus();
+
+                    // Simular el movimiento de todos modos
+                    simulateMovement(command);
+                }
+            } catch (error) {
+                console.error('Error de comunicación:', error);
+
+                // Si hay error de comunicación, cambiar al modo simulación
+                roverState.connected = false;
+                updateConnectionStatus();
+
+                // Simular el movimiento de todos modos
+                simulateMovement(command);
+            }
+        }
+
+        // Función para simular movimiento localmente
+        function simulateMovement(command) {
+            const speedFactor = roverState.speed * 5; // Factor de velocidad
+
+            // Actualizar posición según el comando
+            switch (command) {
+                case 'F': // Adelante
+                    roverState.x += speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y -= speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                case 'B': // Atrás
+                    roverState.x -= speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y += speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                case 'L': // Izquierda
+                    roverState.direction -= 15;
+                    break;
+
+                case 'R': // Derecha
+                    roverState.direction += 15;
+                    break;
+
+                case 'G': // Diagonal adelante-izquierda
+                    roverState.direction -= 5;
+                    roverState.x += speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y -= speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                case 'I': // Diagonal adelante-derecha
+                    roverState.direction += 5;
+                    roverState.x += speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y -= speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                case 'H': // Diagonal atrás-izquierda
+                    roverState.direction -= 5;
+                    roverState.x -= speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y += speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                case 'J': // Diagonal atrás-derecha
+                    roverState.direction += 5;
+                    roverState.x -= speedFactor * Math.sin(roverState.direction * Math.PI / 180);
+                    roverState.y += speedFactor * Math.cos(roverState.direction * Math.PI / 180);
+                    break;
+
+                // Para los comandos de velocidad (0-9), no hacer cambios de posición
+                case '0': case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': case '8': case '9':
+                    break;
+
+                case 'S': // Detener
+                    // No hacer nada, solo detener el movimiento
+                    break;
+            }
+
+            // Actualizar visual
+            updateRoverPosition();
+        }
+
+        // Agregar eventos a los botones de control
+        document.querySelectorAll('.control-btn[data-command]').forEach(button => {
+            button.addEventListener('click', function () {
+                const command = this.getAttribute('data-command');
+                sendCommand(command);
+            });
+        });
+
+        // Función para conectar con el rover real
+        async function connectToRover() {
+            try {
+                connectionInfo.textContent = 'Conectando...';
+
+                const response = await fetch('/api/test-rover-connection/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    roverState.connected = true;
+                    connectRoverBtn.innerHTML = '<i class="bi bi-wifi"></i> Desconectar';
+                    connectRoverBtn.classList.remove('btn-success');
+                    connectRoverBtn.classList.add('btn-danger');
+                } else {
+                    roverState.connected = false;
+                    showConnectionDialog();
+                }
+
+                updateConnectionStatus();
+
+            } catch (error) {
+                console.error('Error al conectar:', error);
+                roverState.connected = false;
+                updateConnectionStatus();
+                showConnectionDialog();
+            }
+        }
+
+        // Función para mostrar diálogo de configuración
+        function showConnectionDialog() {
+            // HTML del diálogo
+            const modalHTML = `
+            <div class="modal fade" id="connectionModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Configuración de Conexión</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="connectionForm">
+                                <div class="mb-3">
+                                    <label for="roverIP" class="form-label">Dirección IP del Rover:</label>
+                                    <input type="text" class="form-control" id="roverIP" value="192.168.1.89">
+                                    <div class="form-text">La IP predeterminada del ESP8266 en modo AP es 192.168.1.89</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Modo de Conexión:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="connectionMode" id="apMode" value="ap" checked>
+                                        <label class="form-check-label" for="apMode">
+                                            Modo AP - Conectar a la red WiFi del Rover
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="connectionMode" id="staMode" value="sta">
+                                        <label class="form-check-label" for="staMode">
+                                            Modo STA - Configurar el Rover para conectarse a mi red WiFi
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="staSettings" class="d-none">
+                                    <div class="mb-3">
+                                        <label for="wifiSSID" class="form-label">Nombre de la red WiFi:</label>
+                                        <input type="text" class="form-control" id="wifiSSID">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="wifiPassword" class="form-label">Contraseña WiFi:</label>
+                                        <input type="password" class="form-control" id="wifiPassword">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="saveConnection">Conectar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            // Añadir modal al DOM
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('connectionModal'));
+            modal.show();
+
+            // Manejar cambio de modo de conexión
+            document.querySelectorAll('input[name="connectionMode"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    const staSettings = document.getElementById('staSettings');
+                    if (this.value === 'sta') {
+                        staSettings.classList.remove('d-none');
+                    } else {
+                        staSettings.classList.add('d-none');
+                    }
+                });
+            });
+
+            // Manejar botón de guardar
+            document.getElementById('saveConnection').addEventListener('click', async function () {
+                const roverIP = document.getElementById('roverIP').value;
+                const connectionMode = document.querySelector('input[name="connectionMode"]:checked').value;
+
+                // Si es modo STA, configurar el rover
+                if (connectionMode === 'sta') {
+                    const ssid = document.getElementById('wifiSSID').value;
+                    const password = document.getElementById('wifiPassword').value;
+
+                    if (!ssid || !password) {
+                        alert('Por favor, ingresa el nombre y contraseña de la red WiFi.');
+                        return;
+                    }
+
+                    try {
+                        // Aquí iría el código para configurar el rover en modo STA
+                        alert('La configuración del modo STA no está implementada en esta demo.');
+                    } catch (error) {
+                        console.error('Error al configurar modo STA:', error);
+                        alert('Error al configurar el modo STA: ' + error.message);
+                    }
+                }
+
+                // Intentar conectar al rover
+                try {
+                    connectionInfo.textContent = 'Conectando a ' + roverIP + '...';
+
+                    const response = await fetch('/api/test-rover-connection/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            rover_ip: roverIP
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        roverState.connected = true;
+                        modal.hide();
+
+                        // Cambiar botón de conexión
+                        connectRoverBtn.innerHTML = '<i class="bi bi-wifi"></i> Desconectar';
+                        connectRoverBtn.classList.remove('btn-success');
+                        connectRoverBtn.classList.add('btn-danger');
+                    } else {
+                        alert('No se pudo conectar al rover: ' + data.message);
+                        roverState.connected = false;
+                    }
+
+                    updateConnectionStatus();
+
+                } catch (error) {
+                    console.error('Error al conectar:', error);
+                    alert('Error al conectar: ' + error.message);
+                    roverState.connected = false;
+                    updateConnectionStatus();
+                }
+            });
+        }
+
+        // Actualizar indicadores de conexión
+        function updateConnectionStatus() {
+            if (roverState.connected) {
+                connectionIndicator.classList.remove('status-disconnected');
+                connectionIndicator.classList.add('status-connected');
+                connectionInfo.textContent = 'Conectado';
+            } else {
+                connectionIndicator.classList.remove('status-connected');
+                connectionIndicator.classList.add('status-disconnected');
+                connectionInfo.textContent = 'Modo Simulación';
+            }
+        }
+
+        // Evento para botón de conexión
+        connectRoverBtn.addEventListener('click', function () {
+            if (roverState.connected) {
+                // Desconectar
+                roverState.connected = false;
+                updateConnectionStatus();
+
+                // Restaurar botón
+                connectRoverBtn.innerHTML = '<i class="bi bi-wifi"></i> Conectar Rover';
+                connectRoverBtn.classList.remove('btn-danger');
+                connectRoverBtn.classList.add('btn-success');
+            } else {
+                // Mostrar diálogo de conexión
+                showConnectionDialog();
+            }
+        });
+
+        // Evento para volver al editor
+        backToEditorBtn.addEventListener('click', function () {
+            window.location.href = '/editor/';
+        });
+
+        // Evento para cargar programa desde el editor
+        loadProgram.addEventListener('click', function () {
+            // Recuperar código del editor de localStorage
+            const lastProgram = localStorage.getItem('umgpp_current_program');
+
+            if (lastProgram) {
+                localStorage.setItem('program_to_simulate', lastProgram);
+                alert('Programa cargado con éxito.');
+            } else {
+                alert('No hay ningún programa en el editor. Por favor, regresa al editor y escribe un programa UMG++.');
+            }
+        });
+
+        // Evento para ejecutar programa
+        executeProgram.addEventListener('click', async function () {
+            const program = localStorage.getItem('program_to_simulate');
+
+            if (!program) {
+                alert('No hay ningún programa cargado. Usa "Cargar desde Editor" primero.');
+                return;
+            }
+
+            try {
+                // Compilar programa
+                const response = await fetch('/api/compile/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        code: program
+                    })
+                });
+
+                const compileResult = await response.json();
+
+                if (!compileResult.success) {
+                    alert('Error al compilar: ' + compileResult.message);
+                    return;
+                }
+
+                // Obtener comandos compilados
+                const commands = compileResult.commands;
+
+                // Ejecutar comandos secuencialmente
+                for (const command of commands) {
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            sendCommand(command.command);
+                            resolve();
+                        }, command.duration * 1000); // Convertir duración a milisegundos
+                    });
+                }
+
+                alert('Programa ejecutado completamente.');
+
+            } catch (error) {
+                console.error('Error al ejecutar programa:', error);
+                alert('Error al ejecutar programa: ' + error.message);
+            }
+        });
+
+        // Función para obtener el token CSRF
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+
+        // Controlar rover con teclado
+        document.addEventListener('keydown', function (event) {
+            let command = null;
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    command = 'F';
+                    break;
+                case 'ArrowDown':
+                    command = 'B';
+                    break;
+                case 'ArrowLeft':
+                    command = 'L';
+                    break;
+                case 'ArrowRight':
+                    command = 'R';
+                    break;
+                case ' ':
+                    command = 'S';
+                    break;
+                case 'h':
+                case 'H':
+                    command = 'V'; // Bocina
+                    break;
+                case 'l':
+                case 'L':
+                    command = 'W'; // Luz encendida
+                    break;
+                case 'k':
+                case 'K':
+                    command = 'w'; // Luz apagada
+                    break;
+            }
+
+            if (command) {
+                sendCommand(command);
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+// Agregar después de los otros manejadores de eventos de botones
+if (compileBtn) {
+    compileBtn.addEventListener('click', function () {
+        logToConsole("🔍 Botón Compilar presionado - Funciona correctamente");
+        compileCode();
+    });
+}
+
+if (simulateBtn) {
+    simulateBtn.addEventListener('click', function () {
+        logToConsole("🎮 Botón Simular presionado - Funciona correctamente");
+        simulateCode();
+    });
+}
+
+if (executeBtn) {
+    executeBtn.addEventListener('click', function () {
+        logToConsole("🚀 Botón Ejecutar presionado - Funciona correctamente");
+        executeCode();
+    });
+}
+
+// Añadir esto para el botón de limpiar consola
+const clearConsoleBtn = document.querySelector('#clear-console-btn');
+if (clearConsoleBtn) {
+    clearConsoleBtn.addEventListener('click', function () {
+        if (consoleOutput) {
+            consoleOutput.textContent = "== Consola de UMG Basic Rover 2.0 == \nConsola limpiada. Listo para nuevos comandos.";
+            console.log("🧹 Consola limpiada");
+        }
+    });
+}

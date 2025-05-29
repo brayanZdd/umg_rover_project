@@ -1,0 +1,2657 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para el resaltado de sintaxis UMG++ */
+    .syntax-editor {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        border: 2px solid #4caf50;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        overflow: hidden;
+        display: flex;
+    }
+
+    /* Contador de líneas */
+    .line-numbers {
+        background: #f5f5f5;
+        border-right: 1px solid #ddd;
+        color: #666;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 15px 8px;
+        text-align: right;
+        min-width: 50px;
+        user-select: none;
+        white-space: pre;
+        overflow: hidden;
+    }
+
+    .syntax-textarea {
+        position: absolute;
+        top: 0;
+        left: 50px;
+        width: calc(100% - 50px);
+        height: 100%;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 15px;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: transparent;
+        caret-color: #333;
+        resize: none;
+        z-index: 2;
+    }
+
+    .syntax-highlight {
+        position: absolute;
+        top: 0;
+        left: 50px;
+        width: calc(100% - 50px);
+        height: 100%;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 15px;
+        border: none;
+        background: transparent;
+        color: #333;
+        pointer-events: none;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-y: auto;
+        z-index: 1;
+    }
+
+    .keyword {
+        color: #0066cc;
+        font-weight: bold;
+    }
+
+    .command {
+        color: #00aacc;
+        font-weight: bold;
+    }
+
+    .parenthesis {
+        color: #009900;
+        font-weight: bold;
+    }
+
+    .number {
+        color: #cc0000;
+        font-weight: bold;
+    }
+
+    .punctuation {
+        color: #666666;
+    }
+
+    /* Reproductor de Audio */
+    .audio-player {
+        background: linear-gradient(135deg, #115a17, #3effa2);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: white;
+        text-align: center;
+        position: relative;
+    }
+
+    .audio-close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.3);
+        border: none;
+        color: white;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .audio-close-btn:hover {
+        background: rgba(70, 69, 69, 0.5);
+        transform: scale(2.1);
+    }
+
+    .audio-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .audio-controls button {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .audio-controls button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .audio-info {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    /* Botón E-Stop */
+    .btn-emergency {
+        background: linear-gradient(135deg, #dc3545, #c82333) !important;
+        border: 3px solid #fff !important;
+        color: white !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4) !important;
+        animation: pulse-emergency 2s infinite !important;
+    }
+
+    .btn-emergency:hover {
+        background: linear-gradient(135deg, #c82333, #bd2130) !important;
+        transform: scale(1.05) !important;
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6) !important;
+    }
+
+    @keyframes pulse-emergency {
+
+        0%,
+        100% {
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 4px 25px rgba(220, 53, 69, 0.8);
+        }
+    }
+
+    .simulator-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgb(255, 255, 255);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        display: none;
+        width: 90vw;
+        max-width: 800px;
+        height: 70vh;
+    }
+
+    .simulator-header {
+        background: linear-gradient(135deg, #17a2b8, #20c997);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .simulator-canvas {
+        width: 100%;
+        height: calc(100% - 60px);
+        background: linear-gradient(45deg, #e8f5e9 25%, transparent 25%),
+            linear-gradient(-45deg, #e8f5e9 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #e8f5e9 75%),
+            linear-gradient(-45deg, transparent 75%, #e8f5e9 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rover-sprite {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #17a2b8, #20c997);
+        border-radius: 8px;
+        transform-origin: center;
+        transition: all 0.5s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .rover-sprite::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 12px solid #1b5e20;
+    }
+
+    .path-point {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #000000;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 0.6;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+    }
+
+    .console-output {
+        background-color: #1e1e1e;
+        color: #00ff00;
+        font-family: 'Courier New', monospace;
+        padding: 15px;
+        border-radius: 10px;
+        height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-size: 14px;
+        line-height: 1.4;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .bitacora-panel {
+        background: linear-gradient(135deg, #b24700, #e98940);
+        color: white;
+        border-radius: 10px;
+        padding: 0;
+        height: 600px;
+        overflow-y: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 20px;
+    }
+
+    .bitacora-header {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 15px 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        text-align: center;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .bitacora-content {
+        padding: 15px;
+        max-height: none;
+        /* o directamente elimínalo si no lo necesitas */
+        height: 90%;
+        /* se ajusta al alto del contenedor padre */
+        overflow-y: auto;
+    }
+
+
+    .command-entry {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        border-left: 4px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .command-entry:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateX(5px);
+    }
+
+    .command-entry.success {
+        border-left-color: #4caf50;
+        background: rgba(76, 175, 80, 0.2);
+    }
+
+    .command-entry.error {
+        border-left-color: #ce1313;
+        background: rgba(244, 67, 54, 0.2);
+    }
+
+    .command-entry.simulation {
+        border-left-color: #1512c3;
+        background: rgba(33, 150, 243, 0.2);
+    }
+
+    .command-timestamp {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-bottom: 5px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .command-type {
+        font-weight: bold;
+        font-size: 0.9rem;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .command-details {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        line-height: 1.3;
+        font-family: 'Courier New', monospace;
+    }
+
+    .command-status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    .status-success {
+        background: rgba(76, 175, 80, 0.3);
+        color: #2e7d32;
+    }
+
+    .status-error {
+        background: rgba(244, 67, 54, 0.3);
+        color: #c62828;
+    }
+
+    .status-simulation {
+        background: rgba(33, 150, 243, 0.3);
+        color: #1565c0;
+    }
+
+    .clear-bitacora-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .clear-bitacora-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .bitacora-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: rgba(255, 255, 255, 0.7);
+        font-style: italic;
+    }
+
+    .instructions-panel {
+        background: linear-gradient(135deg, #056014, #09c910);
+        color: white;
+        border-radius: 10px;
+        padding: 0;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .instructions-header {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .instruction-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background-color 0.3s ease;
+        cursor: pointer;
+    }
+
+    .instruction-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .instruction-item:last-child {
+        border-bottom: none;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .instruction-command {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .instruction-description {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        line-height: 1.3;
+    }
+
+    .btn-action {
+        min-width: 120px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2e7d32, #4caf50);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ff9800, #ffb74d);
+        border: none;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #f57c00, #ff9800);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        color: white;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #d32f2f, #f44336);
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #b71c1c, #d32f2f);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #546e7a, #78909c);
+        border: none;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #37474f, #546e7a);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(84, 110, 122, 0.4);
+        color: white;
+    }
+
+    .simulator-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999;
+        display: none;
+    }
+
+    .control-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .form-control {
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #2e7d32;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    }
+
+    @media (min-width: 992px) {
+        .editor-column {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .bitacora-column {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+
+        .instructions-column {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8, #20c997);
+        border: none;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, #138496, #1e7e34);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+        color: white;
+    }
+
+    @media (max-width: 991px) {
+        .simulator-container {
+            width: 95vw;
+            height: 80vh;
+        }
+
+        .btn-action {
+            min-width: 100px;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+        }
+
+        .instructions-panel,
+        .bitacora-panel {
+            max-height: 300px;
+        }
+    }
+
+    .coreografia-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 3px solid transparent;
+    }
+
+    .coreografia-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        border-color: #4caf50;
+    }
+
+    .coreografia-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .coreografia-description {
+        opacity: 0.9;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+    }
+
+    .coreografia-preview {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        margin-bottom: 15px;
+        max-height: 80px;
+        overflow: hidden;
+    }
+
+    .coreografia-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .audio-preview {
+        background: #ff4444;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .audio-preview:hover {
+        background: #cc0000;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .select-coreografia {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .select-coreografia:hover {
+        background: #45a049;
+        transform: scale(1.05);
+    }
+
+    .menu-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .menu-btn {
+        background: linear-gradient(135deg, #546e7a, #78909c);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        margin-right: 8px;
+        min-width: 120px;
+    }
+
+    .menu-btn:hover {
+        background: linear-gradient(135deg, #37474f, #546e7a);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(84, 110, 122, 0.4);
+    }
+
+    .menu-btn.active {
+        background: linear-gradient(135deg, #37474f, #546e7a);
+        transform: translateY(-1px);
+    }
+
+    .dropdown-menu-custom {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        min-width: 220px;
+        z-index: 1000;
+        display: none;
+        margin-top: 5px;
+    }
+
+    .dropdown-menu-custom.show {
+        display: block;
+        animation: fadeInDown 0.2s ease;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-item-custom {
+        display: block;
+        width: 100%;
+        padding: 12px 16px;
+        color: #212529;
+        text-decoration: none;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    .dropdown-item-custom:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+
+    .dropdown-item-custom:active {
+        background-color: #e9ecef;
+    }
+
+    .dropdown-item-custom i {
+        width: 18px;
+        margin-right: 10px;
+        text-align: center;
+    }
+
+    .dropdown-divider-custom {
+        height: 1px;
+        background-color: #dee2e6;
+        margin: 5px 0;
+    }
+
+    .shortcut-text {
+        float: right;
+        font-size: 11px;
+        color: #6c757d;
+        margin-left: 20px;
+    }
+
+    /* Estilos para elementos deshabilitados */
+    .dropdown-item-custom:disabled,
+    .dropdown-item-custom.disabled {
+        color: #6c757d;
+        cursor: not-allowed;
+        background-color: transparent;
+    }
+
+    .dropdown-item-custom:disabled:hover,
+    .dropdown-item-custom.disabled:hover {
+        background-color: transparent;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3>Editor UMG++</h3>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <!-- Campo IP -->
+                    <div class="col-auto">
+                        <div class="input-group mb-0" style="max-width: 400px;">
+                            <span class="input-group-text">Rover IP:</span>
+                            <input type="text" id="rover-ip" class="form-control" placeholder="192.168.1.89"
+                                value="192.168.1.89">
+                        </div>
+                    </div>
+
+                    <!-- Botones con espacio entre ellos -->
+                    <div class="col-auto">
+                        <!-- Menú Archivo -->
+                        <div class="menu-dropdown">
+                            <button class="menu-btn" id="archivo-menu-btn">
+                                <i class="bi bi-folder"></i> Archivo
+                            </button>
+                            <div class="dropdown-menu-custom" id="archivo-menu">
+                                <button type="button" class="dropdown-item-custom" id="menu-new">
+                                    <i class="bi bi-file-earmark-plus"></i> Nuevo
+                                    <span class="shortcut-text">Ctrl+N</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-open">
+                                    <i class="bi bi-folder-open"></i> Abrir
+                                    <span class="shortcut-text">Ctrl+O</span>
+                                </button>
+                                <div class="dropdown-divider-custom"></div>
+                                <button type="button" class="dropdown-item-custom" id="menu-save">
+                                    <i class="bi bi-save"></i> Guardar
+                                    <span class="shortcut-text">Ctrl+S</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-save-as">
+                                    <i class="bi bi-save2"></i> Guardar como...
+                                    <span class="shortcut-text">Ctrl+Shift+S</span>
+                                </button>
+                                <div class="dropdown-divider-custom"></div>
+                                <button type="button" class="dropdown-item-custom" id="menu-print">
+                                    <i class="bi bi-printer"></i> Imprimir
+                                    <span class="shortcut-text">Ctrl+P</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Menú Editar -->
+                        <div class="menu-dropdown">
+                            <button class="menu-btn" id="editar-menu-btn">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <div class="dropdown-menu-custom" id="editar-menu">
+                                <button type="button" class="dropdown-item-custom" id="menu-undo">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Deshacer
+                                    <span class="shortcut-text">Ctrl+Z</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-redo">
+                                    <i class="bi bi-arrow-clockwise"></i> Rehacer
+                                    <span class="shortcut-text">Ctrl+Y</span>
+                                </button>
+                                <div class="dropdown-divider-custom"></div>
+                                <button type="button" class="dropdown-item-custom" id="menu-cut">
+                                    <i class="bi bi-scissors"></i> Cortar
+                                    <span class="shortcut-text">Ctrl+X</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-copy">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                    <span class="shortcut-text">Ctrl+C</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-paste">
+                                    <i class="bi bi-clipboard-check"></i> Pegar
+                                    <span class="shortcut-text">Ctrl+V</span>
+                                </button>
+                                <div class="dropdown-divider-custom"></div>
+                                <button type="button" class="dropdown-item-custom" id="menu-find">
+                                    <i class="bi bi-search"></i> Buscar
+                                    <span class="shortcut-text">Ctrl+F</span>
+                                </button>
+                                <button type="button" class="dropdown-item-custom" id="menu-replace">
+                                    <i class="bi bi-arrow-left-right"></i> Reemplazar
+                                    <span class="shortcut-text">Ctrl+H</span>
+                                </button>
+                                <div class="dropdown-divider-custom"></div>
+                                <button type="button" class="dropdown-item-custom" id="menu-select-all">
+                                    <i class="bi bi-check2-all"></i> Seleccionar todo
+                                    <span class="shortcut-text">Ctrl+A</span>
+                                </button>
+                            </div>
+                        </div>
+                        <button id="coreografias-btn" class="btn btn-warning btn-action me-2">
+                            <i class="bi bi-music-note-list"></i> Coreografías
+                        </button>
+                        <button id="ayuda-btn" class="btn btn-info btn-action">
+                            <i class="bi bi-question-circle"></i> Ayuda
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reproductor de Audio -->
+            <div class="audio-player" id="audio-player" style="display: none;">
+                <button class="audio-close-btn" id="audio-close-btn" title="Cerrar reproductor">
+                    <i class="bi bi-x"></i>
+                </button>
+                <div class="audio-info" id="audio-info">🎵 Sin coreografía seleccionada</div>
+                <audio id="audio-element" preload="auto"></audio>
+                <div class="audio-controls">
+                    <button id="play-btn"><i class="bi bi-play-fill"></i> Play</button>
+                    <button id="pause-btn"><i class="bi bi-pause-fill"></i> Pause</button>
+                    <button id="stop-btn"><i class="bi bi-stop-fill"></i> Stop</button>
+                    <span id="audio-time">0:00 / 0:00</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Columna del Editor y Consola (50%) -->
+                <div class="col-lg-6 editor-column">
+                    <!-- Agregar CSRF Token -->
+                    {% csrf_token %}
+
+                    <!-- Editor de código con resaltado de sintaxis y contador de líneas -->
+                    <div class="syntax-editor">
+                        <div id="line-numbers" class="line-numbers">1</div>
+                        <textarea id="code-editor" class="syntax-textarea"
+                            placeholder="Escribe tu código UMG++ aquí...">PROGRAM mi_programa
+BEGIN
+  avanzar_mts(1);
+  girar(1) + avanzar_ctms(50);
+  girar(-1) + avanzar_ctms(50);
+  circulo(20);
+END.</textarea>
+                        <div id="syntax-highlight" class="syntax-highlight"></div>
+                    </div>
+
+                    <div class="mt-3 mb-3">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button id="compile-btn" class="btn btn-primary btn-action">
+                                <i class="bi bi-play"></i> Compilar
+                            </button>
+                            <button id="simulate-btn" class="btn btn-warning btn-action">
+                                <i class="bi bi-joystick"></i> Simular
+                            </button>
+                            <button id="execute-btn" class="btn btn-danger btn-action">
+                                <i class="bi bi-send"></i> Ejecutar
+                            </button>
+                            <button id="emergency-stop-btn" class="btn btn-emergency btn-action" style="display: none;">
+                                <i class="bi bi-octagon-fill"></i> STOP
+                            </button>
+                            <button id="clear-console-btn" class="btn btn-secondary btn-action">
+                                <i class="bi bi-trash"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Consola de salida -->
+                    <div class="console-output"> == Consola de UMG Basic Rover 2.0 ==.</div>
+                </div>
+
+                <!-- Columna de la Bitácora (25%) -->
+                <div class="col-lg-3 bitacora-column">
+                    <!-- Bitácora arriba -->
+                    <div class="bitacora-panel">
+                        <div class="bitacora-header">
+                            <span><i class="bi bi-journal-text"></i> Bitácora de Comandos</span>
+                            <button class="clear-bitacora-btn" id="clear-bitacora-btn" title="Limpiar Bitácora">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="bitacora-content" id="bitacora-content">
+                            <div class="bitacora-empty">
+                                <i class="bi bi-clock-history" style="font-size: 2rem; opacity: 0.5;"></i>
+                                <p>No hay comandos registrados aún.</p>
+                                <small>Los comandos enviados al rover aparecerán aquí.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna de Instrucciones (25%) -->
+                <div class="col-lg-3 instructions-column">
+                    <!-- Instrucciones -->
+                    <div class="instructions-panel">
+                        <div class="instructions-header">
+                            Instrucciones UMG++
+                        </div>
+                        <div class="instruction-item" data-command="avanzar_vlts">
+                            <div class="instruction-command">avanzar_vlts(n)</div>
+                            <div class="instruction-description">Avanzar n vueltas de rueda</div>
+                        </div>
+                        <div class="instruction-item" data-command="avanzar_ctms">
+                            <div class="instruction-command">avanzar_ctms(n)</div>
+                            <div class="instruction-description">Avanzar n centímetros</div>
+                        </div>
+                        <div class="instruction-item" data-command="avanzar_mts">
+                            <div class="instruction-command">avanzar_mts(n)</div>
+                            <div class="instruction-description">Avanzar n metros</div>
+                        </div>
+                        <div class="instruction-item" data-command="girar">
+                            <div class="instruction-command">girar(n)</div>
+                            <div class="instruction-description">Girar (1=derecha, -1=izquierda, 0=recto)</div>
+                        </div>
+                        <div class="instruction-item" data-command="circulo">
+                            <div class="instruction-command">circulo(r)</div>
+                            <div class="instruction-description">Dibujar círculo de radio r</div>
+                        </div>
+                        <div class="instruction-item" data-command="cuadrado">
+                            <div class="instruction-command">cuadrado(l)</div>
+                            <div class="instruction-description">Dibujar cuadrado de lado l</div>
+                        </div>
+                        <div class="instruction-item" data-command="rotar">
+                            <div class="instruction-command">rotar(n)</div>
+                            <div class="instruction-description">Rotar n vueltas sobre su eje</div>
+                        </div>
+                        <div class="instruction-item" data-command="caminar">
+                            <div class="instruction-command">caminar(n)</div>
+                            <div class="instruction-description">Caminar n pasos</div>
+                        </div>
+                        <div class="instruction-item" data-command="moonwalk">
+                            <div class="instruction-command">moonwalk(n)</div>
+                            <div class="instruction-description">Hacer moonwalk n pasos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Simulador Modal -->
+<div class="simulator-overlay" id="simulator-overlay"></div>
+<div class="simulator-container" id="simulator-container">
+    <div class="simulator-header">
+        <h4><i class="bi bi-cpu"></i> Simulador del Rover</h4>
+        <button class="btn btn-sm btn-light" id="close-simulator">
+            <i class="bi bi-x-lg"></i> Cerrar
+        </button>
+    </div>
+    <div class="simulator-canvas" id="simulator-canvas">
+        <div class="rover-sprite" id="rover-sprite"></div>
+    </div>
+</div>
+
+<!-- Modal de Coreografías -->
+<div class="simulator-overlay" id="coreografias-overlay"></div>
+<div class="simulator-container" id="coreografias-container" style="max-width: 900px; height: 80vh;">
+    <div class="simulator-header">
+        <h4><i class="bi bi-music-note-list"></i> Coreografías Disponibles</h4>
+        <button class="btn btn-sm btn-light" id="close-coreografias">
+            <i class="bi bi-x-lg"></i> Cerrar
+        </button>
+    </div>
+    <div style="padding: 20px; height: calc(100% - 60px); overflow-y: auto;">
+        <div class="row" id="coreografias-list">
+            <div class="col-12 text-center" style="padding: 40px;">
+                <i class="bi bi-hourglass-split" style="font-size: 3rem; color: #666;"></i>
+                <p style="margin-top: 15px; color: #666;">Cargando coreografías...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ayuda -->
+<div class="simulator-overlay" id="ayuda-overlay"></div>
+<div class="simulator-container" id="ayuda-container" style="max-width: 1000px; height: 85vh;">
+    <div class="simulator-header" style="background: linear-gradient(135deg, #17a2b8, #20c997);">
+        <h4><i class="bi bi-question-circle"></i> Ayuda - Editor UMG++</h4>
+        <button class="btn btn-sm btn-light" id="close-ayuda">
+            <i class="bi bi-x-lg"></i> Cerrar
+        </button>
+    </div>
+    <div style="padding: 25px; height: calc(100% - 60px); overflow-y: auto; background: #f8f9fa;">
+        <div class="row">
+            <div class="col-md-6">
+                <div
+                    style="background: linear-gradient(135deg, #120184, #05cfdd); color: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; height: fit-content;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4><i class="bi bi-lightbulb"></i> Tips y Ejemplos</h4>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 18px; margin-bottom: 18px;">
+                        <h5><i class="bi bi-star"></i> Ejemplo Básico:</h5>
+                        <code style="color: #ffeb3b; font-size: 1rem; line-height: 1.6;">
+PROGRAM ejemplo<br>
+BEGIN<br>
+&nbsp;&nbsp;avanzar_mts(2);<br>
+&nbsp;&nbsp;girar(1);<br>
+&nbsp;&nbsp;circulo(30);<br>
+&nbsp;&nbsp;cuadrado(40);<br>
+END.
+                        </code>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 18px; margin-bottom: 18px;">
+                        <h5><i class="bi bi-info-circle"></i> Comandos Combinados:</h5>
+                        <p style="font-size: 1rem; margin: 0; line-height: 1.5;">
+                            Usa <code style="color: #ffeb3b; font-size: 1.1rem;">+</code> para combinar movimientos:<br>
+                            <code style="color: #ffeb3b; font-size: 1rem;">girar(1) + avanzar_ctms(50);</code><br>
+                            <code style="color: #ffeb3b; font-size: 1rem;">rotar(2) + caminar(5);</code>
+                        </p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 18px;">
+                        <h5><i class="bi bi-calculator"></i> Valores Recomendados:</h5>
+                        <ul style="font-size: 1rem; margin: 0; padding-left: 25px; line-height: 1.6;">
+                            <li><strong>Distancias:</strong> 10-100 cm</li>
+                            <li><strong>Giros:</strong> 1 (derecha), -1 (izquierda)</li>
+                            <li><strong>Círculos:</strong> radio 10-50</li>
+                            <li><strong>Cuadrados:</strong> lado 20-80</li>
+                            <li><strong>Rotaciones:</strong> 1-5 vueltas</li>
+                            <li><strong>Pasos:</strong> 1-20 movimientos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div
+                    style="background: linear-gradient(150deg, #20c997, #17a2b8); color: white; border-radius: 15px; padding: 25px; margin-bottom: 20px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4><i class="bi bi-code-square"></i> Guía de Comandos</h4>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h6><strong>Movimientos Básicos:</strong></h6>
+                        <ul style="font-size: 0.95rem; margin: 8px 0; padding-left: 20px;">
+                            <li><code>avanzar_mts(n)</code> - Avanzar metros</li>
+                            <li><code>avanzar_ctms(n)</code> - Avanzar centímetros</li>
+                            <li><code>avanzar_vlts(n)</code> - Avanzar por vueltas de rueda</li>
+                        </ul>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h6><strong>Giros y Rotaciones:</strong></h6>
+                        <ul style="font-size: 0.95rem; margin: 8px 0; padding-left: 20px;">
+                            <li><code>girar(1)</code> - Girar a la derecha</li>
+                            <li><code>girar(-1)</code> - Girar a la izquierda</li>
+                            <li><code>rotar(n)</code> - Rotar n vueltas completas</li>
+                        </ul>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h6><strong>Figuras Geométricas:</strong></h6>
+                        <ul style="font-size: 0.95rem; margin: 8px 0; padding-left: 20px;">
+                            <li><code>circulo(r)</code> - Dibujar círculo de radio r</li>
+                            <li><code>cuadrado(l)</code> - Dibujar cuadrado de lado l</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 15px;">
+                        <h6><strong>Movimientos Especiales:</strong></h6>
+                        <ul style="font-size: 0.95rem; margin: 8px 0; padding-left: 20px;">
+                            <li><code>caminar(n)</code> - Caminar n pasos</li>
+                            <li><code>moonwalk(n)</code> - Moonwalk n pasos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div
+                    style="background: linear-gradient(135deg, #bb7917, #f4b454); color: white; border-radius: 15px; padding: 25px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4><i class="bi bi-file-code"></i> Estructura del Programa</h4>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 18px;">
+                        <code style="color: #fff; font-size: 1rem; line-height: 1.8;">
+<strong>PROGRAM</strong> nombre_programa<br>
+<strong>BEGIN</strong><br>
+&nbsp;&nbsp;// Tus comandos aquí<br>
+&nbsp;&nbsp;avanzar_mts(2);<br>
+&nbsp;&nbsp;girar(1);<br>
+&nbsp;&nbsp;circulo(30);<br>
+<strong>END.</strong>
+                        </code>
+                        <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                        <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">
+                            <strong>Recuerda:</strong> Cada comando debe terminar con <code>;</code><br>
+                            El programa debe terminar con <code>END.</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log("Editor UMG++ con reproductor de audio inicializado");
+
+        // Referencias a elementos del DOM
+        const codeEditor = document.querySelector('#code-editor');
+        const syntaxHighlight = document.querySelector('#syntax-highlight');
+        const lineNumbers = document.querySelector('#line-numbers');
+        const consoleOutput = document.querySelector('.console-output');
+        const compileBtn = document.querySelector('#compile-btn');
+        const simulateBtn = document.querySelector('#simulate-btn');
+        const executeBtn = document.querySelector('#execute-btn');
+        const clearConsoleBtn = document.querySelector('#clear-console-btn');
+        const roverIpInput = document.querySelector('#rover-ip');
+
+        // Referencias para el reproductor de audio
+        const audioPlayer = document.getElementById('audio-player');
+        const audioElement = document.getElementById('audio-element');
+        const audioInfo = document.getElementById('audio-info');
+        const audioCloseBtn = document.getElementById('audio-close-btn');
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const audioTime = document.getElementById('audio-time');
+
+        // JavaScript para los menús desplegables
+        // Referencias a los elementos
+        const archivoMenuBtn = document.getElementById('archivo-menu-btn');
+        const archivoMenu = document.getElementById('archivo-menu');
+        const editarMenuBtn = document.getElementById('editar-menu-btn');
+        const editarMenu = document.getElementById('editar-menu');
+
+        // Referencias para botones de control
+        const emergencyStopBtn = document.getElementById('emergency-stop-btn');
+
+        // Referencias para la bitácora
+        const bitacoraContent = document.querySelector('#bitacora-content');
+        const clearBitacoraBtn = document.querySelector('#clear-bitacora-btn');
+
+        // Referencias para ayuda
+        const ayudaBtn = document.querySelector('#ayuda-btn');
+        const ayudaOverlay = document.getElementById('ayuda-overlay');
+        const ayudaContainer = document.getElementById('ayuda-container');
+        const closeAyuda = document.getElementById('close-ayuda');
+
+        // Referencias para coreografías
+        const coreografiasBtn = document.querySelector('#coreografias-btn');
+        const coreografiasOverlay = document.getElementById('coreografias-overlay');
+        const coreografiasContainer = document.getElementById('coreografias-container');
+        const closeCoreografias = document.getElementById('close-coreografias');
+        const coreografiasList = document.getElementById('coreografias-list');
+
+        // Elementos del simulador
+        const simulatorOverlay = document.getElementById('simulator-overlay');
+        const simulatorContainer = document.getElementById('simulator-container');
+        const simulatorCanvas = document.getElementById('simulator-canvas');
+        const roverSprite = document.getElementById('rover-sprite');
+        const closeSimulator = document.getElementById('close-simulator');
+
+        // Variables del simulador
+        let roverPosition = { x: 400, y: 300, angle: 0 };
+        let pathPoints = [];
+
+        // Variables para la bitácora
+        let commandHistory = [];
+
+        // Variable global para la coreografía actual
+        let currentCoreografia = null;
+
+        // Variables para control de ejecución
+        let isExecuting = false;
+        let executionAborted = false;
+        let currentExecutionController = null;
+        // Agregar estas referencias después de las otras referencias del DOM
+        const newBtn = document.querySelector('#new-btn');
+        const openBtn = document.querySelector('#open-btn');
+        const saveBtn = document.querySelector('#save-btn');
+
+
+        // Función para LOS BOTONES----------------------------------------------------------------------------------------------------------------
+        function saveAsFile() {
+            const code = codeEditor.value;
+            if (!code || code.trim() === '') {
+                logToConsole('⚠️ No hay código para guardar');
+                return;
+            }
+
+            const filename = prompt('Nombre del archivo:', 'mi_programa_umg.txt');
+            if (!filename) return;
+
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.endsWith('.txt') ? filename : filename + '.txt';
+
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            addToBitacora('Archivo', '💾 Guardado como', '✅Programa guardado como ' + a.download, 'success');
+        }
+
+        function printCode() {
+            const code = codeEditor.value;
+            if (!code || code.trim() === '') {
+                logToConsole('⚠️ No hay código para imprimir');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Código UMG++</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; margin: 20px; }
+                        pre { white-space: pre-wrap; word-wrap: break-word; }
+                        h1 { color: #4caf50; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Código UMG++</h1>
+                    <pre>${code}</pre>
+                </body>
+            </html>
+        `);
+            printWindow.document.close();
+            printWindow.print();
+
+            addToBitacora('Archivo', '🖨️ Imprimir', '✅Código enviado a impresora', 'success');
+        }
+
+        // ===============================
+        // FUNCIONES PARA MENÚ EDITAR
+        // ===============================
+        function undoAction() {
+            if (document.execCommand) {
+                document.execCommand('undo');
+            } else {
+                codeEditor.focus();
+                // Fallback para browsers modernos
+                if (navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Firefox')) {
+                    codeEditor.dispatchEvent(new KeyboardEvent('keydown', {
+                        ctrlKey: true,
+                        key: 'z'
+                    }));
+                }
+            }
+            addToBitacora('Editar', '↶ Deshacer', 'Acción deshecha', 'success');
+        }
+
+        function redoAction() {
+            if (document.execCommand) {
+                document.execCommand('redo');
+            } else {
+                codeEditor.focus();
+                if (navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Firefox')) {
+                    codeEditor.dispatchEvent(new KeyboardEvent('keydown', {
+                        ctrlKey: true,
+                        key: 'y'
+                    }));
+                }
+            }
+            addToBitacora('Editar', '↷ Rehacer', 'Acción rehecha', 'success');
+        }
+
+        function cutText() {
+            if (codeEditor.selectionStart !== codeEditor.selectionEnd) {
+                const selectedText = codeEditor.value.substring(codeEditor.selectionStart, codeEditor.selectionEnd);
+                navigator.clipboard.writeText(selectedText).then(() => {
+                    codeEditor.setRangeText('');
+                    addToBitacora('Editar', '✂️ Cortar', 'Texto cortado al portapapeles', 'success');
+                });
+            } else {
+                logToConsole('⚠️ No hay texto seleccionado para cortar');
+            }
+        }
+
+        function copyText() {
+            if (codeEditor.selectionStart !== codeEditor.selectionEnd) {
+                const selectedText = codeEditor.value.substring(codeEditor.selectionStart, codeEditor.selectionEnd);
+                navigator.clipboard.writeText(selectedText).then(() => {
+                    addToBitacora('Editar', '📋 Copiar', 'Texto copiado al portapapeles', 'success');
+                });
+            } else {
+                // Copiar todo si no hay selección
+                navigator.clipboard.writeText(codeEditor.value).then(() => {
+                    addToBitacora('Editar', '📋 Copiar', 'Todo el código copiado', 'success');
+                });
+            }
+        }
+
+        function pasteText() {
+            navigator.clipboard.readText().then(text => {
+                const start = codeEditor.selectionStart;
+                const end = codeEditor.selectionEnd;
+                codeEditor.setRangeText(text);
+                codeEditor.selectionStart = codeEditor.selectionEnd = start + text.length;
+                updateSyntaxHighlight();
+                addToBitacora('Editar', '📄 Pegar', 'Texto pegado desde portapapeles', 'success');
+            }).catch(() => {
+                logToConsole('❌ Error al acceder al portapapeles');
+            });
+        }
+
+        function findText() {
+            const searchText = prompt('Buscar texto:');
+            if (!searchText) return;
+
+            const code = codeEditor.value;
+            const index = code.toLowerCase().indexOf(searchText.toLowerCase());
+
+            if (index !== -1) {
+                codeEditor.focus();
+                codeEditor.setSelectionRange(index, index + searchText.length);
+                addToBitacora('Editar', '🔍 Buscar', `Texto "${searchText}" encontrado`, 'success');
+            } else {
+                logToConsole(`❌ No se encontró "${searchText}"`);
+                addToBitacora('Editar', '🔍 Buscar', `Texto "${searchText}" no encontrado`, 'error');
+            }
+        }
+
+        function replaceText() {
+            const searchText = prompt('Buscar texto:');
+            if (!searchText) return;
+
+            const replaceText = prompt('Reemplazar con:');
+            if (replaceText === null) return;
+
+            const code = codeEditor.value;
+            const newCode = code.replace(new RegExp(searchText, 'g'), replaceText);
+
+            if (newCode !== code) {
+                codeEditor.value = newCode;
+                updateSyntaxHighlight();
+                addToBitacora('Editar', '🔄 Reemplazar', `"${searchText}" reemplazado con "${replaceText}"`, 'success');
+            } else {
+                logToConsole(`❌ No se encontró "${searchText}"`);
+            }
+        }
+
+        function selectAllText() {
+            codeEditor.focus();
+            codeEditor.select();
+            addToBitacora('Editar', '✅ Seleccionar', 'Todo el texto seleccionado', 'success');
+        }
+
+
+        function newFile() {
+            // Confirmar si hay cambios sin guardar
+            if (codeEditor.value.trim() !== '' && codeEditor.value.trim() !== 'PROGRAM mi_programa\nBEGIN\n \nEND.') {
+                if (!confirm('¿Estás seguro de crear un nuevo archivo? Se perderán los cambios no guardados.')) {
+                    return;
+                }
+            }
+
+            // Limpiar el editor y poner la estructura básica
+            codeEditor.value = 'PROGRAM new_mi_programa\nBEGIN\n \nEND.';
+
+            // Actualizar el resaltado de sintaxis
+            updateSyntaxHighlight();
+
+            // Posicionar el cursor después de BEGIN
+            const beginIndex = codeEditor.value.indexOf('BEGIN\n') + 6;
+            codeEditor.focus();
+            codeEditor.setSelectionRange(beginIndex, beginIndex);
+
+            // Limpiar la consola
+            clearConsole();
+
+            // Cerrar audio si está abierto
+            if (currentCoreografia) {
+                closeAudio();
+            }
+
+            addToBitacora('Archivo', ' Nuevo', '📄Nuevo programa UMG++ creado', 'success');
+        }
+
+        // Función para el botón GUARDAR
+        function saveFile() {
+            const code = codeEditor.value;
+
+            if (!code || code.trim() === '') {
+                logToConsole('⚠️ No hay código para guardar');
+                return;
+            }
+
+            // Obtener el nombre del programa del código
+            const programMatch = code.match(/PROGRAM\s+(\w+)/);
+            const programName = programMatch ? programMatch[1] : 'programa_umg';
+
+            // Crear el contenido del archivo
+            const blob = new Blob([code], { type: 'text/plain' });
+
+            // Crear un enlace temporal para descargar
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = programName + '.txt';
+
+            // Simular clic para descargar
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiar
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+
+            addToBitacora('Archivo', '💾 Guardado', '✅Programa guardado como ' + programName + '.txt', 'success');
+        }
+
+        // Función para el botón ABRIR
+        function openFile() {
+            // Crear input file temporal
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+
+            input.onchange = function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Verificar que sea un archivo .txt
+                if (!file.name.endsWith('.txt')) {
+                    logToConsole('❌ Error: Solo se permiten archivos .txt');
+                    addToBitacora('Error', '❌ Archivo', 'Solo se permiten archivos .txt', 'error');
+                    return;
+                }
+
+                // Confirmar si hay cambios sin guardar
+                if (codeEditor.value.trim() !== '' && codeEditor.value.trim() !== 'PROGRAM mi_programa\nBEGIN\n \nEND.') {
+                    if (!confirm('¿Estás seguro de abrir un archivo? Se perderán los cambios no guardados.')) {
+                        return;
+                    }
+                }
+
+                // Leer el archivo
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const content = event.target.result;
+
+                    // Validar que tenga estructura básica de UMG++
+                    if (!content.includes('PROGRAM') || !content.includes('BEGIN') || !content.includes('END')) {
+                        logToConsole('❌ Error: El archivo no parece ser un programa UMG++ válido');
+                        addToBitacora('Error', '❌ Formato', 'Archivo no válido de UMG++', 'error');
+                        return;
+                    }
+
+                    // Cargar el contenido en el editor
+                    codeEditor.value = content;
+                    updateSyntaxHighlight();
+
+                    // Cerrar audio si está abierto
+                    if (currentCoreografia) {
+                        closeAudio();
+                    }
+
+                    addToBitacora('Archivo', '📂 Abierto', '✅Programa cargado desde ' + file.name, 'success');
+                };
+
+                reader.onerror = function () {
+                    addToBitacora('Error', '❌ Lectura', 'Error al leer el archivo', 'error');
+                };
+
+                reader.readAsText(file);
+
+
+
+            };
+
+            // Simular clic para abrir diálogo
+            input.click();
+        }
+
+        // Agregar event listeners a los botones
+        if (newBtn) {
+            newBtn.addEventListener('click', newFile);
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveFile);
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', openFile);
+
+        }
+
+        // ===============================
+        // EVENT LISTENERS PARA MENÚ ARCHIVO
+        // ===============================
+        document.getElementById('menu-new').addEventListener('click', function () {
+            newFile();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-open').addEventListener('click', function () {
+            openFile();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-save').addEventListener('click', function () {
+            saveFile();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-save-as').addEventListener('click', function () {
+            saveAsFile();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-print').addEventListener('click', function () {
+            printCode();
+            closeAllMenus();
+        });
+
+        // ===============================
+        // EVENT LISTENERS PARA MENÚ EDITAR
+        // ===============================
+        document.getElementById('menu-undo').addEventListener('click', function () {
+            undoAction();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-redo').addEventListener('click', function () {
+            redoAction();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-cut').addEventListener('click', function () {
+            cutText();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-copy').addEventListener('click', function () {
+            copyText();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-paste').addEventListener('click', function () {
+            pasteText();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-find').addEventListener('click', function () {
+            findText();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-replace').addEventListener('click', function () {
+            replaceText();
+            closeAllMenus();
+        });
+
+        document.getElementById('menu-select-all').addEventListener('click', function () {
+            selectAllText();
+            closeAllMenus();
+        });
+
+        archivoMenuBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = archivoMenu.classList.contains('show');
+            closeAllMenus();
+            if (!isOpen) {
+                archivoMenu.classList.add('show');
+                archivoMenuBtn.classList.add('active');
+            }
+        });
+        // Cerrar menús al hacer clic fuera
+        document.addEventListener('click', function () {
+            closeAllMenus();
+        });
+
+        // Prevenir que los menús se cierren al hacer clic dentro de ellos
+        document.querySelectorAll('.dropdown-menu-custom').forEach(menu => {
+            menu.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+        // Toggle menú editar
+        editarMenuBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = editarMenu.classList.contains('show');
+            closeAllMenus();
+            if (!isOpen) {
+                editarMenu.classList.add('show');
+                editarMenuBtn.classList.add('active');
+            }
+        });
+
+        // Opcional: Agregar atajos de teclado
+        // ===============================
+        // ATAJOS DE TECLADO ADICIONALES
+        // ===============================
+        document.addEventListener('keydown', function (e) {
+            // Atajos para Guardar como
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                saveAsFile();
+            }
+            // Atajos para Imprimir
+            else if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                printCode();
+            }
+            // Atajos para Buscar
+            else if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                findText();
+            }
+            // Atajos para Reemplazar
+            else if (e.ctrlKey && e.key === 'h') {
+                e.preventDefault();
+                replaceText();
+            }
+        });
+        //----------------------------------------------------------------FIN FUNCION BOTONES----------------------------------
+
+
+
+
+        // FUNCIÓN PARA ACTUALIZAR CONTADOR DE LÍNEAS
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n');
+            const lineCount = lines.length;
+            let lineNumbersText = '';
+
+            for (let i = 1; i <= lineCount; i++) {
+                lineNumbersText += i + '\n';
+            }
+
+            lineNumbers.textContent = lineNumbersText;
+        }
+
+        // FUNCIÓN DE RESALTADO DE SINTAXIS UMG++
+        function highlightSyntax(code) {
+            code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            code = code.replace(/\b(PROGRAM|BEGIN|END|PUNTO)\b/g, '<span class="keyword">$1</span>');
+            code = code.replace(/\b(avanzar_vlts|avanzar_ctms|avanzar_mts|girar|circulo|cuadrado|rotar|caminar|moonwalk)\b/g, '<span class="command">$1</span>');
+            code = code.replace(/\b(-?\d+)\b/g, '<span class="number">$1</span>');
+            code = code.replace(/(\(|\))/g, '<span class="parenthesis">$1</span>');
+            code = code.replace(/([;.,+])/g, '<span class="punctuation">$1</span>');
+            return code;
+        }
+
+        function updateSyntaxHighlight() {
+            const code = codeEditor.value;
+            const highlighted = highlightSyntax(code);
+            syntaxHighlight.innerHTML = highlighted;
+            updateLineNumbers();
+        }
+
+        function syncScroll() {
+            syntaxHighlight.scrollTop = codeEditor.scrollTop;
+            syntaxHighlight.scrollLeft = codeEditor.scrollLeft;
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        }
+
+        codeEditor.addEventListener('input', updateSyntaxHighlight);
+        codeEditor.addEventListener('scroll', syncScroll);
+        codeEditor.addEventListener('keydown', function () {
+            setTimeout(updateSyntaxHighlight, 0);
+        });
+
+        updateSyntaxHighlight();
+
+        // FUNCIONES DEL REPRODUCTOR DE AUDIO
+        function loadAudio(audioFile, coreografiaName) {
+            currentCoreografia = coreografiaName;
+            audioElement.src = '{% static "music/" %}' + audioFile;
+            audioInfo.textContent = '🎵 ' + coreografiaName + ' - Listo para reproducir';
+            audioPlayer.style.display = 'block';
+
+            audioElement.addEventListener('loadedmetadata', function () {
+                updateAudioTime();
+            });
+
+            logToConsole('🎵 Audio cargado: ' + coreografiaName);
+        }
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu-custom').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            document.querySelectorAll('.menu-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        function closeAudio() {
+            audioElement.pause();
+            audioElement.src = '';
+            currentCoreografia = null;
+            audioPlayer.style.display = 'none';
+            logToConsole('❌ Reproductor de audio cerrado');
+        }
+
+        function playAudio() {
+            if (audioElement.src) {
+                audioElement.play();
+                audioInfo.textContent = '🎵 Reproduciendo: ' + currentCoreografia;
+                logToConsole('▶️ Reproduciendo: ' + currentCoreografia);
+            }
+        }
+
+        function pauseAudio() {
+            audioElement.pause();
+            audioInfo.textContent = '⏸️ Pausado: ' + currentCoreografia;
+            logToConsole('⏸️ Audio pausado');
+        }
+
+        function stopAudio() {
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            audioInfo.textContent = '⏹️ Detenido: ' + currentCoreografia;
+            logToConsole('⏹️ Audio detenido');
+        }
+
+
+
+        // FUNCION DE STOP--------------------------------------------------------------------------------------------
+        function emergencyStop() {
+            // Detener todo localmente INMEDIATAMENTE
+            if (audioElement && !audioElement.paused) {
+                stopAudio();
+            }
+
+            if (currentExecutionController) {
+                currentExecutionController.abort();
+            }
+
+            // Variables de estado
+            executionAborted = true;
+            isExecuting = false;
+            currentExecutionController = null;
+
+            // UI
+            emergencyStopBtn.style.display = 'none';
+            executeBtn.disabled = false;
+            simulateBtn.disabled = false;
+            compileBtn.disabled = false;
+            hideSimulator();
+
+            const roverIp = roverIpInput.value.trim() || '192.168.1.98';
+
+            // Solo un mensaje en consola
+            logToConsole("🛑 STOP - Deteniendo rover...");
+
+            // Solo UNA petición de emergencia stop
+            fetch('/api/emergency_stop/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    rover_ip: roverIp
+                }),
+                signal: AbortSignal.timeout(1000)  // 1 segundo timeout
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }).then(data => {
+                if (data && data.success) {
+                    logToConsole("✅ Rover detenido");
+                    addToBitacora('STOP', '🛑 Emergencia', 'Rover detenido exitosamente', 'success');
+                } else {
+                    logToConsole("⚠️ Error al detener rover");
+                    addToBitacora('STOP', '❌ Error', 'No se pudo confirmar la parada', 'error');
+                }
+                finalizarEmergencia();
+            }).catch(error => {
+                logToConsole("❌ Error de conexión");
+                addToBitacora('STOP', '❌ Error', 'Error de conexión: ' + error.message, 'error');
+                finalizarEmergencia();
+            });
+
+            function finalizarEmergencia() {
+                // Reset del sistema
+                executionAborted = false;
+                isExecuting = false;
+                currentExecutionController = null;
+
+                // UI final
+                emergencyStopBtn.style.display = 'none';
+                executeBtn.disabled = false;
+                simulateBtn.disabled = false;
+                compileBtn.disabled = false;
+            }
+        }
+
+        function updateAudioTime() {
+            const current = Math.floor(audioElement.currentTime);
+            const duration = Math.floor(audioElement.duration) || 0;
+            const currentMin = Math.floor(current / 60);
+            const currentSec = current % 60;
+            const durationMin = Math.floor(duration / 60);
+            const durationSec = duration % 60;
+
+            audioTime.textContent = currentMin + ':' + currentSec.toString().padStart(2, '0') + ' / ' + durationMin + ':' + durationSec.toString().padStart(2, '0');
+        }
+
+        playBtn.addEventListener('click', playAudio);
+        pauseBtn.addEventListener('click', pauseAudio);
+        stopBtn.addEventListener('click', stopAudio);
+        audioCloseBtn.addEventListener('click', closeAudio);
+        emergencyStopBtn.addEventListener('click', emergencyStop);
+        audioElement.addEventListener('timeupdate', updateAudioTime);
+
+        function logToConsole(message) {
+            if (consoleOutput) {
+                const timestamp = new Date().toLocaleTimeString();
+                consoleOutput.textContent += '\n[' + timestamp + '] ' + message;
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            console.log("📝 " + message);
+        }
+
+        function addToBitacora(type, command, details, status) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = {
+                timestamp: timestamp,
+                type: type,
+                command: command,
+                details: details,
+                status: status || 'success'
+            };
+
+            commandHistory.push(entry);
+            updateBitacoraDisplay();
+        }
+
+        function parseAndLogRoverMovements(code) {
+            const lines = code.split('\n');
+            let movementCount = 0;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('//') || line.includes('PROGRAM') || line.includes('BEGIN') || line.includes('END')) {
+                    return;
+                }
+
+                if (line.includes('avanzar_mts(')) {
+                    const match = line.match(/avanzar_mts\((\d+)\)/);
+                    if (match) {
+                        const metros = match[1];
+                        addToBitacora('Movimiento', '🏃 Avanzar', 'Rover avanzó ' + metros + ' metro' + (metros > 1 ? 's' : ''), 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('avanzar_ctms(')) {
+                    const match = line.match(/avanzar_ctms\((\d+)\)/);
+                    if (match) {
+                        const centimetros = match[1];
+                        addToBitacora('Movimiento', '🏃 Avanzar', 'Rover avanzó ' + centimetros + ' centímetro' + (centimetros > 1 ? 's' : ''), 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('avanzar_vlts(')) {
+                    const match = line.match(/avanzar_vlts\((\d+)\)/);
+                    if (match) {
+                        const vueltas = match[1];
+                        addToBitacora('Movimiento', '🏃 Avanzar', 'Rover avanzó ' + vueltas + ' vuelta' + (vueltas > 1 ? 's' : '') + ' de rueda', 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('girar(')) {
+                    const match = line.match(/girar\((-?\d+)\)/);
+                    if (match) {
+                        const direccion = parseInt(match[1]);
+                        let direccionTexto = '';
+                        if (direccion > 0) {
+                            direccionTexto = 'derecha';
+                        } else if (direccion < 0) {
+                            direccionTexto = 'izquierda';
+                        } else {
+                            direccionTexto = 'recto (sin girar)';
+                        }
+                        addToBitacora('Giro', '🔄 Girar', 'Rover giró hacia la ' + direccionTexto, 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('circulo(')) {
+                    const match = line.match(/circulo\((\d+)\)/);
+                    if (match) {
+                        const radio = match[1];
+                        addToBitacora('Figura', '⭕ Círculo', 'Rover dibujó un círculo de radio ' + radio, 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('cuadrado(')) {
+                    const match = line.match(/cuadrado\((\d+)\)/);
+                    if (match) {
+                        const lado = match[1];
+                        addToBitacora('Figura', '⬜ Cuadrado', 'Rover dibujó un cuadrado de lado ' + lado, 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('rotar(')) {
+                    const match = line.match(/rotar\((\d+)\)/);
+                    if (match) {
+                        const vueltas = match[1];
+                        addToBitacora('Rotación', '🌪️ Rotar', 'Rover rotó ' + vueltas + ' vuelta' + (vueltas > 1 ? 's' : '') + ' sobre su eje', 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('caminar(')) {
+                    const match = line.match(/caminar\((\d+)\)/);
+                    if (match) {
+                        const pasos = match[1];
+                        addToBitacora('Movimiento', '🚶 Caminar', 'Rover caminó ' + pasos + ' paso' + (pasos > 1 ? 's' : ''), 'success');
+                        movementCount++;
+                    }
+                } else if (line.includes('moonwalk(')) {
+                    const match = line.match(/moonwalk\((\d+)\)/);
+                    if (match) {
+                        const pasos = match[1];
+                        addToBitacora('Movimiento', '🕺 Moonwalk', 'Rover hizo moonwalk ' + pasos + ' paso' + (pasos > 1 ? 's' : ''), 'success');
+                        movementCount++;
+                    }
+                }
+            });
+
+            if (movementCount > 0) {
+                addToBitacora('Resumen', '📊 Total', 'Se ejecutaron ' + movementCount + ' comando' + (movementCount > 1 ? 's' : '') + ' de movimiento', 'success');
+            }
+        }
+
+        function updateBitacoraDisplay() {
+            if (commandHistory.length === 0) {
+                bitacoraContent.innerHTML = '<div class="bitacora-empty"><i class="bi bi-clock-history" style="font-size: 2rem; opacity: 0.5;"></i><p>No hay comandos registrados aún.</p><small>Los comandos enviados al rover aparecerán aquí.</small></div>';
+                return;
+            }
+
+            let html = '';
+            commandHistory.slice(-15).reverse().forEach(entry => {
+                html += '<div class="command-entry ' + entry.status + '">';
+                html += '<div class="command-timestamp">' + entry.timestamp + '</div>';
+                html += '<div class="command-type">' + entry.type + '</div>';
+                html += '<div class="command-details">' + entry.details + '</div>';
+                html += '<span class="command-status status-' + entry.status + '">' + getStatusText(entry.status) + '</span>';
+                html += '</div>';
+            });
+
+            bitacoraContent.innerHTML = html;
+            bitacoraContent.scrollTop = 0;
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'success': return 'Éxito';
+                case 'error': return 'Error';
+                case 'simulation': return 'Simulación';
+                default: return 'Desconocido';
+            }
+        }
+
+        function clearBitacora() {
+            commandHistory = [];
+            updateBitacoraDisplay();
+            logToConsole("🧹 Bitácora limpia");
+        }
+
+        async function loadCoreografias() {
+            try {
+                const response = await fetch('/api/coreografias/', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayCoreografias(data.coreografias);
+                } else {
+                    displayCoreografias(getCoreografiasEjemplo());
+                }
+            } catch (error) {
+                displayCoreografias(getCoreografiasEjemplo());
+            }
+        }
+
+        function displayCoreografias(coreografias) {
+            if (!coreografias || coreografias.length === 0) {
+                coreografiasList.innerHTML = '<div class="col-12 text-center" style="padding: 40px;"><i class="bi bi-music-note" style="font-size: 3rem; color: #666;"></i><p style="margin-top: 15px; color: #666;">No hay coreografías disponibles</p></div>';
+                return;
+            }
+
+            let html = '';
+            coreografias.forEach(coreografia => {
+                html += '<div class="col-md-6 mb-3">';
+                html += '<div class="coreografia-card" onclick="selectCoreografia(' + coreografia.id + ')">';
+                html += '<div class="coreografia-title">';
+                html += '<i class="bi bi-music-note-beamed"></i>';
+                html += coreografia.nombre;
+                if (coreografia.id === 4) {
+                    html += '<span style="color: #ffeb3b; margin-left: 10px;"><i></i></span>';
+                }
+                html += '</div>';
+                html += '<div class="coreografia-description">' + coreografia.descripcion + '</div>';
+                html += '<div class="coreografia-preview">';
+                html += coreografia.codigo.substring(0, 120) + (coreografia.codigo.length > 120 ? '...' : '');
+                html += '</div>';
+                html += '<div class="coreografia-actions">';
+                html += '<button class="audio-preview" onclick="event.stopPropagation(); previewAudio(\'' + coreografia.audio_file + '\', \'' + coreografia.nombre + '\');">';
+                html += '<i class="bi bi-headphones"></i> Preview';
+                html += '</button>';
+                html += '<button class="select-coreografia" onclick="event.stopPropagation(); selectCoreografia(' + coreografia.id + ');">';
+                html += '<i class="bi bi-download"></i> Cargar';
+                html += '</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+
+            coreografiasList.innerHTML = html;
+        }
+
+        window.previewAudio = function (audioFile, nombre) {
+            loadAudio(audioFile, nombre);
+            setTimeout(() => {
+                playAudio();
+            }, 500);
+        };
+
+        window.selectCoreografia = async function (id) {
+            try {
+                const coreografias = getCoreografiasEjemplo();
+                const coreografia = coreografias.find(c => c.id === id);
+
+                if (coreografia) {
+                    codeEditor.value = coreografia.codigo;
+                    updateSyntaxHighlight();
+                    codeEditor.focus();
+
+                    loadAudio(coreografia.audio_file, coreografia.nombre);
+
+                    hideCoreografias();
+
+                    addToBitacora('Coreografía', '🎵 ' + coreografia.nombre, 'Coreografía "' + coreografia.nombre + '" cargada con audio', 'success');
+                    logToConsole('🎵 Coreografía "' + coreografia.nombre + '" cargada exitosamente');
+                } else {
+                    logToConsole('❌ Error: Coreografía no encontrada');
+                    addToBitacora('Error', '❌ Coreografía', 'Coreografía no encontrada', 'error');
+                }
+            } catch (error) {
+                logToConsole('❌ Error al cargar coreografía: ' + error.message);
+                addToBitacora('Error', '❌ Coreografía', 'Error al cargar: ' + error.message, 'error');
+            }
+        };
+
+        function getCoreografiasEjemplo() {
+            return [
+                {
+                    id: 1,
+                    nombre: "No Beef",
+                    descripcion: "Coreografía electrónica - 3 minutos de punchis punchis",
+                    audio_file: "1.mp3",
+                    codigo: "PROGRAM electric\nBEGIN\n  circulo(72);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  girar(1) + avanzar_vlts(-1) + caminar(-1);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  circulo(30);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(7);\n  circulo(40);\n  girar(-1);\n  girar(-1);\n  girar(-1) + circulo(40);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(50);\n  avanzar_ctms(-50);\n  avanzar_ctms(3) + avanzar_ctms(3) + avanzar_ctms(3);\n  avanzar_ctms(3) + avanzar_ctms(3) + avanzar_ctms(3);\n  avanzar_ctms(-3) + avanzar_ctms(-3) + avanzar_ctms(-3);\n  avanzar_ctms(3) + avanzar_ctms(3) + avanzar_ctms(3);\n  avanzar_ctms(-3) + avanzar_ctms(-3) + avanzar_ctms(-3);\n  girar(1);\n  rotar(3);\n  girar(-1);\n  rotar(4);\n  caminar(1) + caminar(1);\n  girar(-1) + girar(-1);\n  caminar(1) + caminar(1);\n  caminar(1) + caminar(1);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  girar(1) + avanzar_vlts(-1) + caminar(-1);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  circulo(30);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(7);\n  circulo(40);\n  girar(-1);\n  girar(-1);\n  girar(-1) + circulo(40);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(50);\n  avanzar_ctms(-50);\n  avanzar_ctms(6) + avanzar_ctms(6) + avanzar_ctms(6);\n  avanzar_ctms(6) + avanzar_ctms(6) + avanzar_ctms(6);\n  avanzar_ctms(-6) + avanzar_ctms(-6) + avanzar_ctms(-6);\n  avanzar_ctms(6) + avanzar_ctms(6) + avanzar_ctms(6);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  caminar(-3);\n  caminar(3);\n  caminar(-3);\n  caminar(3);\n  girar(1);\n  rotar(3);\n  girar(-1);\n  circulo(90);\n  rotar(3);\n  rotar(-1);\n  rotar(7);\n  avanzar_ctms(50);\n  avanzar_ctms(-50);\n  avanzar_ctms(5) + avanzar_ctms(5) + avanzar_ctms(5);\n  avanzar_ctms(-5) + avanzar_ctms(-5) + avanzar_ctms(-5);\n  avanzar_vlts(1);\nEND."
+                },
+                {
+                    id: 2,
+                    nombre: "Carrusel",
+                    descripcion: "La vida La vida es un carrusel",
+                    audio_file: "2.mp3",
+                    codigo: "PROGRAM La_vida\nBEGIN\n  avanzar_vlts(-1) + girar(-1);\n  caminar(1);\n  caminar(1);\n  caminar(-1);\n  caminar(1);\n  caminar(-1);\n  caminar(1);\n  girar(1);\n  avanzar_ctms(7) + avanzar_ctms(7);\n  circulo(100);\n  avanzar_ctms(10) + avanzar_ctms(10);\n  circulo(100);\n  avanzar_ctms(10) + avanzar_ctms(10);\n  girar(-1) + girar(-1) + girar(-1) + girar(-1) + girar(1);\n  girar(-1) + girar(-1) + girar(-1) + girar(-1) + girar(1);\n  circulo(100);\n  caminar(1);\n  caminar(1);\n  caminar(-1);\n  girar(1) + girar(1) + caminar(-1) + caminar(-1);\n  girar(-1) + girar(-1) + caminar(1) + caminar(1);\n  circulo(20);\n  caminar(-1);\n  circulo(20);\n  caminar(1);\n  caminar(1);\n  avanzar_ctms(10) + avanzar_ctms(10) + avanzar_ctms(10);\n  circulo(100);\n  rotar(-1);\n  circulo(120);\n  rotar(-1);\n  rotar(1);\n  circulo(100);\n  avanzar_ctms(10) + avanzar_ctms(10);\n  circulo(100);\n  avanzar_ctms(10) + avanzar_ctms(10);\n  girar(-1) + girar(-1) + girar(-1) + girar(-1) + girar(1);\n  girar(-1) + girar(-1) + girar(-1) + girar(-1) + girar(1);\n  circulo(100);\n  caminar(1);\n  caminar(1);\n  caminar(-1);\n  girar(1) + girar(1) + caminar(-1) + caminar(-1);\n  girar(-1) + girar(-1) + caminar(1) + caminar(1);\n  circulo(20);\n  caminar(-1);\n  circulo(20);\n  caminar(1);\n  caminar(1);\n  circulo(100);\n  avanzar_ctms(10) + avanzar_ctms(10);\n  circulo(100);\n  girar(-1) + girar(-1) + girar(-1) + girar(-1) + girar(1);\nEND."
+                },
+                {
+                    id: 3,
+                    nombre: "Harley Quinn",
+                    descripcion: "¿Un corridito? carga esta coreografía",
+                    audio_file: "3.mp3",
+                    codigo: "PROGRAM Fuer_Za_regida\nBEGIN\n  avanzar_ctms(10) + avanzar_ctms(10) + avanzar_ctms(10);\n  girar(1);\n  girar(-1);\n  girar(1) + caminar(1);\n  girar(-1) + caminar(1);\n  girar(1) + caminar(-1);\n  girar(-1) + caminar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  rotar(1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  rotar(1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  caminar(1) + caminar(1);\n  caminar(-1) + caminar(-1) + moonwalk(1);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(-7);\n  rotar(3);\n  rotar(1);\n  caminar(-1);\n  caminar(1);\n  rotar(1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  rotar(1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  rotar(1);\n  girar(1);\n  girar(-1);\n  girar(1);\n  girar(-1);\n  caminar(1) + caminar(1);\n  caminar(-1) + caminar(-1) + moonwalk(1);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  circulo(90);\n  rotar(-1);\n  rotar(3);\n  avanzar_ctms(50);\n  rotar(2);\n  circulo(40);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  avanzar_ctms(-7) + avanzar_ctms(-7) + avanzar_ctms(-7);\n  avanzar_ctms(7) + avanzar_ctms(7) + avanzar_ctms(7);\n  circulo(40);\nEND."
+                },
+                {
+                    id: 4,
+                    nombre: "Moonwalk Master",
+                    descripcion: "Coreografía especializada en moonwalk",
+                    audio_file: "4.mp3",
+                    codigo: "PROGRAM moonwalk_master\nBEGIN\n  circulo(30);\n  moonwalk(5);\n  girar(1) + girar(1) + avanzar_ctms(50);\n  moonwalk(5);\n  circulo(20);\n  girar(-1) + girar(1) + girar(1) + girar(1);\n  moonwalk(3);\n  circulo(40);\n  girar(1) + avanzar_mts(1);\n  girar(-1) + avanzar_mts(1);\n  girar(-1) + avanzar_mts(1);\n  girar(1) + avanzar_mts(1);\n  rotar(1);\n  girar(1);\n  girar(1);\n  avanzar_ctms(50);\n  rotar(1);\n  rotar(-1);\n  avanzar_mts(-1);\n  avanzar_ctms(50);\n  moonwalk(6);\n  circulo(30);\n  moonwalk(5);\n  girar(1) + girar(1) + avanzar_ctms(50);\n  moonwalk(5);\n  circulo(20);\n  girar(-1) + girar(1) + girar(1) + girar(1);\n  moonwalk(3);\n  circulo(40);\n  girar(1) + avanzar_mts(1);\n  girar(-1) + avanzar_mts(1);\n  girar(-1) + avanzar_mts(1);\n  girar(1) + avanzar_mts(1);\n  rotar(1);\n  girar(1);\n  girar(1);\n  avanzar_ctms(50);\n  rotar(1);\n  rotar(-1);\n  avanzar_mts(-1);\n  avanzar_ctms(50);\n  girar(1);\nEND."
+                }
+            ];
+        }
+
+        function showAyuda() {
+            ayudaOverlay.style.display = 'block';
+            ayudaContainer.style.display = 'block';
+        }
+
+        function hideAyuda() {
+            ayudaOverlay.style.display = 'none';
+            ayudaContainer.style.display = 'none';
+        }
+
+        function showCoreografias() {
+            coreografiasOverlay.style.display = 'block';
+            coreografiasContainer.style.display = 'block';
+            loadCoreografias();
+        }
+
+        function hideCoreografias() {
+            coreografiasOverlay.style.display = 'none';
+            coreografiasContainer.style.display = 'none';
+        }
+
+        logToConsole("Editor UMG++ con reproductor de audio listo para usar");
+
+        function getCSRFToken() {
+            const tokenElements = document.querySelectorAll('input[name="csrfmiddlewaretoken"]');
+            if (tokenElements.length > 0) {
+                return tokenElements[0].value;
+            }
+            return document.cookie.replace(/(?:(?:^|.*;\s*)csrftoken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+        }
+
+        async function compileCode() {
+            const code = codeEditor.value;
+
+            if (!code || code.trim() === '') {
+                logToConsole("❌ Error: El editor está vacío");
+                addToBitacora('Error', '❌ Error', 'No hay código para ejecutar', 'error');
+                return null;
+            }
+
+            logToConsole("Compilando código UMG++...");
+
+            try {
+                const response = await fetch('/api/compile/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    logToConsole("✅ " + data.message);
+                    return data.commands;
+                } else {
+                    logToConsole("❌ Error: " + data.message);
+                    addToBitacora('Error', '❌ Compilación', 'Error de sintaxis: ' + data.message, 'error');
+                    return null;
+                }
+            } catch (error) {
+                logToConsole("❌ Error de conexión: " + error.message);
+                addToBitacora('Error', '❌ Conexión', 'Error de conexión: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        async function simulateCode() {
+            try {
+                const commands = await compileCode();
+                if (!commands) return;
+
+                isExecuting = true;
+                executionAborted = false;
+
+                currentExecutionController = new AbortController();
+
+                emergencyStopBtn.style.display = 'inline-block';
+                executeBtn.disabled = true;
+                simulateBtn.disabled = true;
+
+                logToConsole("Simulando ejecución...");
+                addToBitacora('🚗 Simulación', '🎮 Simulador', 'Iniciando simulación del rover', 'simulation');
+
+                parseAndLogRoverMovements(codeEditor.value);
+
+                if (currentCoreografia && audioElement.src) {
+                    playAudio();
+                    addToBitacora('Audio', '🎵 Música', 'Reproduciendo: ' + currentCoreografia, 'success');
+                }
+
+                const response = await fetch('/api/simulate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ code: codeEditor.value }),
+                    signal: currentExecutionController.signal
+                });
+
+                const data = await response.json();
+
+                if (data.success && !executionAborted) {
+                    logToConsole("✅ Simulación exitosa");
+
+                    data.simulation_trace.forEach((step, index) => {
+                        const cmdName = getCommandName(step.command);
+                        logToConsole((index + 1) + '. ' + cmdName + ' durante ' + step.duration + 'ms');
+                    });
+
+                    showSimulator();
+                    await animateSimulation(data.simulation_trace);
+
+                    if (!executionAborted) {
+                        addToBitacora('Simulación', '✅ Completada', 'Simulación ejecutada exitosamente', 'success');
+                    }
+                } else if (executionAborted) {
+                    logToConsole("🛑 Simulación cancelada por E-Stop");
+                    addToBitacora('Simulación', '🛑 Cancelada', 'Simulación cancelada por parada de emergencia', 'error');
+                } else {
+                    logToConsole("❌ Error: " + data.message);
+                    addToBitacora('Error', '❌ Simulación', 'Error en simulación: ' + data.message, 'error');
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    logToConsole("Simulación cancelada por Stop");
+                    addToBitacora('Simulación', '🛑 Cancelada', 'Stop', 'error');
+                } else if (!executionAborted) {
+                    logToConsole("❌ Error de simulación: " + error.message);
+                    addToBitacora('Error', '❌ Simulación', 'Error de simulación: ' + error.message, 'error');
+                }
+            } finally {
+                isExecuting = false;
+                currentExecutionController = null;
+                emergencyStopBtn.style.display = 'none';
+                executeBtn.disabled = false;
+                simulateBtn.disabled = false;
+            }
+        }
+
+        async function animateSimulation(simulationTrace) {
+            roverPosition = { x: 400, y: 300, angle: 0 };
+            clearPath();
+            updateRoverSprite();
+
+            for (let i = 0; i < simulationTrace.length && !executionAborted; i++) {
+                const step = simulationTrace[i];
+                await animateStep(step);
+
+                if (executionAborted) {
+                    logToConsole("🛑 Animación detenida por Stop ");
+                    break;
+                }
+
+                await sleep(500);
+            }
+
+            if (!executionAborted) {
+                logToConsole("✅ Simulación gráfica completada");
+            }
+        }
+
+        async function animateStep(step) {
+            const baseSteps = 20;
+            const stepDelay = 30;
+
+            let realDistance = 1;
+            let realSteps = baseSteps;
+
+            if (step.duration) {
+                if (step.command === 'F' || step.command === 'B') {
+                    realDistance = Math.max(1, step.duration / 1000);
+                    realSteps = Math.min(50, Math.max(10, realDistance * 10));
+                } else if (step.command === 'L' || step.command === 'R') {
+                    realDistance = Math.max(1, step.duration / 500);
+                    realSteps = Math.min(30, Math.max(8, realDistance * 8));
+                }
+            }
+
+            switch (step.command) {
+                case 'F':
+                    const moveDistance = realDistance * 5;
+                    const stepSizeF = moveDistance / realSteps;
+
+                    for (let i = 0; i < realSteps; i++) {
+                        roverPosition.x += Math.cos(roverPosition.angle * Math.PI / 180) * stepSizeF;
+                        roverPosition.y += Math.sin(roverPosition.angle * Math.PI / 180) * stepSizeF;
+                        addPathPoint();
+                        updateRoverSprite();
+                        await sleep(stepDelay);
+                    }
+                    break;
+
+                case 'B':
+                    const moveDistanceB = realDistance * 5;
+                    const stepSizeB = moveDistanceB / realSteps;
+
+                    for (let i = 0; i < realSteps; i++) {
+                        roverPosition.x -= Math.cos(roverPosition.angle * Math.PI / 180) * stepSizeB;
+                        roverPosition.y -= Math.sin(roverPosition.angle * Math.PI / 180) * stepSizeB;
+                        addPathPoint();
+                        updateRoverSprite();
+                        await sleep(stepDelay);
+                    }
+                    break;
+
+                case 'L':
+                    const totalAngleL = realDistance * 90;
+                    const angleStepL = totalAngleL / realSteps;
+
+                    for (let i = 0; i < realSteps; i++) {
+                        roverPosition.angle -= angleStepL;
+                        updateRoverSprite();
+                        await sleep(stepDelay);
+                    }
+                    break;
+
+                case 'R':
+                    const totalAngleR = realDistance * 90;
+                    const angleStepR = totalAngleR / realSteps;
+
+                    for (let i = 0; i < realSteps; i++) {
+                        roverPosition.angle += angleStepR;
+                        updateRoverSprite();
+                        await sleep(stepDelay);
+                    }
+                    break;
+
+                default:
+                    await sleep(200);
+                    break;
+            }
+        }
+
+        function updateRoverSprite() {
+            roverSprite.style.left = roverPosition.x + 'px';
+            roverSprite.style.top = roverPosition.y + 'px';
+            roverSprite.style.transform = 'translate(-50%, -50%) rotate(' + roverPosition.angle + 'deg)';
+        }
+
+        function addPathPoint() {
+            const point = document.createElement('div');
+            point.className = 'path-point';
+            point.style.left = roverPosition.x + 'px';
+            point.style.top = roverPosition.y + 'px';
+            simulatorCanvas.appendChild(point);
+            pathPoints.push(point);
+        }
+
+        function clearPath() {
+            pathPoints.forEach(point => point.remove());
+            pathPoints = [];
+        }
+
+        function showSimulator() {
+            simulatorOverlay.style.display = 'block';
+            simulatorContainer.style.display = 'block';
+            updateRoverSprite();
+        }
+
+        function hideSimulator() {
+            simulatorOverlay.style.display = 'none';
+            simulatorContainer.style.display = 'none';
+            clearPath();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getCommandName(cmd) {
+            switch (cmd) {
+                case 'F': return "Adelante";
+                case 'B': return "Atrás";
+                case 'L': return "Izquierda";
+                case 'R': return "Derecha";
+                case 'G': return "Adelante-Izquierda";
+                case 'I': return "Adelante-Derecha";
+                case 'H': return "Atrás-Izquierda";
+                case 'J': return "Atrás-Derecha";
+                case 'S': return "Detener";
+                case 'V': return "Bocina";
+                case 'W': return "Luz ON";
+                case 'w': return "Luz OFF";
+                default: return cmd;
+            }
+        }
+
+        async function executeCode() {
+            try {
+                const commands = await compileCode();
+                if (!commands) return;
+
+                const roverIp = roverIpInput.value.trim() || '192.168.1.89';
+
+                isExecuting = true;
+                executionAborted = false;
+
+                currentExecutionController = new AbortController();
+
+                emergencyStopBtn.style.display = 'inline-block';
+                executeBtn.disabled = true;
+                simulateBtn.disabled = true;
+
+                logToConsole(' Ejecutando en el rover (IP: ' + roverIp + ')...');
+                addToBitacora('Ejecución', '🚀 Rover Real', 'Conectando con rover en ' + roverIp, 'simulation');
+
+                parseAndLogRoverMovements(codeEditor.value);
+
+                if (currentCoreografia && audioElement.src) {
+                    playAudio();
+                    addToBitacora('Audio', '🎵 Música', 'Reproduciendo: ' + currentCoreografia, 'success');
+                }
+
+                const response = await fetch('/api/execute/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        code: codeEditor.value,
+                        rover_ip: roverIp
+                    }),
+                    signal: currentExecutionController.signal
+                });
+
+                const data = await response.json();
+
+                if (data.success && !executionAborted) {
+                    logToConsole("✅ Ejecución completada exitosamente");
+                    addToBitacora('Ejecución', '✅ Completada', 'Rover ejecutó todos los comandos exitosamente', 'success');
+                } else if (data.cancelled || executionAborted) {
+                    logToConsole("Ejecución cancelada por Stop");
+                    addToBitacora('Ejecución', '🛑 Cancelada', 'Ejecución cancelada por parada de emergencia', 'error');
+                } else {
+                    logToConsole("❌ Error: " + data.message);
+                    addToBitacora('Error', '❌ Ejecución', 'Error en rover: ' + data.message, 'error');
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    logToConsole("Ejecución cancelada por Stop");
+                    addToBitacora('Ejecución', '🛑 Cancelada', 'Stop', 'error');
+                } else if (!executionAborted) {
+                    logToConsole("❌ Error de ejecución: " + error.message);
+                    addToBitacora('Error', '❌ Conexión', 'Error de conexión con rover: ' + error.message, 'error');
+                }
+            } finally {
+                isExecuting = false;
+                currentExecutionController = null;
+                emergencyStopBtn.style.display = 'none';
+                executeBtn.disabled = false;
+                simulateBtn.disabled = false;
+            }
+        }
+
+        function clearConsole() {
+            if (consoleOutput) {
+                consoleOutput.textContent = "== Consola de UMG Basic Rover 2.0 ==\nConsola limpiada. Listo para nuevos comandos.";
+                logToConsole("🧹 Consola limpiada y lista");
+            }
+        }
+
+        if (compileBtn) {
+            compileBtn.addEventListener('click', function () {
+                logToConsole(" Botón Compilar presionado - Funciona correctamente");
+                compileCode();
+            });
+        }
+
+        if (simulateBtn) {
+            simulateBtn.addEventListener('click', function () {
+                logToConsole(" Botón Simular presionado - Funciona correctamente");
+                simulateCode();
+            });
+        }
+
+        if (executeBtn) {
+            executeBtn.addEventListener('click', function () {
+                logToConsole(" Botón Ejecutar presionado - Funciona correctamente");
+                executeCode();
+            });
+        }
+
+        if (clearConsoleBtn) {
+            clearConsoleBtn.addEventListener('click', clearConsole);
+        }
+
+        if (clearBitacoraBtn) {
+            clearBitacoraBtn.addEventListener('click', clearBitacora);
+        }
+
+        if (ayudaBtn) {
+            ayudaBtn.addEventListener('click', showAyuda);
+        }
+
+        if (coreografiasBtn) {
+            coreografiasBtn.addEventListener('click', showCoreografias);
+        }
+
+        if (closeAyuda) {
+            closeAyuda.addEventListener('click', hideAyuda);
+        }
+        if (ayudaOverlay) {
+            ayudaOverlay.addEventListener('click', hideAyuda);
+        }
+
+        if (closeCoreografias) {
+            closeCoreografias.addEventListener('click', hideCoreografias);
+        }
+        if (coreografiasOverlay) {
+            coreografiasOverlay.addEventListener('click', hideCoreografias);
+        }
+
+        closeSimulator.addEventListener('click', hideSimulator);
+        simulatorOverlay.addEventListener('click', hideSimulator);
+
+        document.querySelectorAll('.instruction-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                const command = this.getAttribute('data-command');
+                let template = '';
+
+                switch (command) {
+                    case 'avanzar_vlts':
+                    case 'avanzar_ctms':
+                    case 'avanzar_mts':
+                    case 'rotar':
+                    case 'caminar':
+                    case 'moonwalk':
+                        template = command + '(1);';
+                        break;
+                    case 'girar':
+                        template = command + '(1);';
+                        break;
+                    case 'circulo':
+                    case 'cuadrado':
+                        template = command + '(40);';
+                        break;
+                    default:
+                        template = command + '();';
+                }
+
+                const start = codeEditor.selectionStart;
+                const end = codeEditor.selectionEnd;
+                const text = codeEditor.value;
+
+                codeEditor.value = text.substring(0, start) + template + text.substring(end);
+                codeEditor.focus();
+                codeEditor.setSelectionRange(start + template.length, start + template.length);
+
+                updateSyntaxHighlight();
+
+                logToConsole('✅ Comando ' + command + ' insertado');
+            });
+        });
+
+        if (roverIpInput && !roverIpInput.value) {
+            roverIpInput.value = '192.168.1.89';
+        }
+    });
+</script>
+{% endblock %}

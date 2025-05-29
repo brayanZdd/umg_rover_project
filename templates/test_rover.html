@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .control-panel {
+        margin-bottom: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .control-btn {
+        padding: 15px;
+        font-size: 18px;
+        border: none;
+        border-radius: 5px;
+        background-color: #0d8832;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .control-btn:hover {
+        background-color: #0d8832;
+        transform: translateY(-2px);
+    }
+
+    .control-btn:active {
+        transform: translateY(0);
+    }
+
+    .control-btn.stop {
+        background-color: #e74c3c;
+    }
+
+    .control-btn.stop:hover {
+        background-color: #c0392b;
+    }
+
+    .control-btn.special {
+        background-color: #9b59b6;
+    }
+
+    .control-btn.special:hover {
+        background-color: #8e44ad;
+    }
+
+    .response-area {
+        height: 200px;
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-y: auto;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3> Control directo del Rover</h3>
+                </div>
+                <div class="card-body">
+                    <div class="control-panel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">IP del Rover:</span>
+                                    <input type="text" id="rover-ip" class="form-control" value="192.168.">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Duración (ms):</span>
+                                    <input type="number" id="command-duration" class="form-control" value="0" min="0"
+                                        step="500">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button id="test-connection-btn" class="btn btn-success">
+                                <i class="bi bi-wifi"></i> Probar Conexión
+                            </button>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3">Controles del Rover</h4>
+                    <div class="control-grid">
+                        <!-- Fila superior -->
+                        <button class="control-btn" data-cmd="G"><i class="bi bi-arrow-up-left"></i></button>
+                        <button class="control-btn" data-cmd="F"><i class="bi bi-arrow-up"></i></button>
+                        <button class="control-btn" data-cmd="I"><i class="bi bi-arrow-up-right"></i></button>
+
+                        <!-- Fila media -->
+                        <button class="control-btn" data-cmd="L"><i class="bi bi-arrow-left"></i></button>
+                        <button class="control-btn stop" data-cmd="S"><i class="bi bi-stop-fill"></i></button>
+                        <button class="control-btn" data-cmd="R"><i class="bi bi-arrow-right"></i></button>
+
+                        <!-- Fila inferior -->
+                        <button class="control-btn" data-cmd="H"><i class="bi bi-arrow-down-left"></i></button>
+                        <button class="control-btn" data-cmd="B"><i class="bi bi-arrow-down"></i></button>
+                        <button class="control-btn" data-cmd="J"><i class="bi bi-arrow-down-right"></i></button>
+                    </div>
+
+                    <h4 class="mt-4 mb-2">Respuesta del Servidor</h4>
+                    <div class="response-area" id="response-output">
+                        > Esperando comandos...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const responseOutput = document.getElementById('response-output');
+        const roverIpInput = document.getElementById('rover-ip');
+        const commandDurationInput = document.getElementById('command-duration');
+        const testConnectionBtn = document.getElementById('test-connection-btn');
+
+        // Función para actualizar el área de respuesta
+        function logResponse(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            responseOutput.innerHTML += `\n[${timestamp}] ${message}`;
+            responseOutput.scrollTop = responseOutput.scrollHeight;
+        }
+
+        // Función para enviar comando al rover
+        async function sendCommand(command) {
+            const roverIp = roverIpInput.value.trim();
+            const duration = commandDurationInput.value;
+
+            if (!roverIp) {
+                logResponse('❌ Error: IP del rover no especificada');
+                return;
+            }
+
+            try {
+                logResponse(`Enviando comando: ${command} (Duración: ${duration}ms)`);
+
+                let url = `/debug-rover/?cmd=${command}&ip=${roverIp}`;
+                if (duration > 0) {
+                    url += `&duration=${duration}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    logResponse(`✅ Éxito: ${data.message}`);
+                    if (data.url) {
+                        logResponse(`📡 URL: ${data.url}`);
+                    }
+                } else {
+                    logResponse(`❌ Error: ${data.message}`);
+                }
+
+            } catch (error) {
+                logResponse(`❌ Error de red: ${error.message}`);
+            }
+        }
+
+        // Probar conexión con el rover
+        async function testConnection() {
+            const roverIp = roverIpInput.value.trim();
+
+            if (!roverIp) {
+                logResponse('❌ Error: IP del rover no especificada');
+                return;
+            }
+
+            try {
+                logResponse(`Probando conexión con rover en: ${roverIp}`);
+
+                // Primero intentar con la nueva API
+                try {
+                    const statusUrl = `http://${roverIp}/status`;
+                    logResponse(`Probando: ${statusUrl}`);
+
+                    const response = await fetch(statusUrl);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        logResponse(`✅ Conexión exitosa (API nueva)`);
+                        logResponse(`📊 Estado: ${JSON.stringify(data)}`);
+                        return;
+                    }
+                } catch (e) {
+                    logResponse(`API nueva no disponible: ${e.message}`);
+                }
+
+                // Si la API nueva falla, intentar con la API antigua
+                try {
+                    const baseUrl = `http://${roverIp}/`;
+                    logResponse(`Probando API antigua: ${baseUrl}`);
+
+                    const response = await fetch(baseUrl);
+
+                    if (response.ok) {
+                        logResponse(`✅ Conexión exitosa (API antigua)`);
+                        return;
+                    }
+                } catch (e) {
+                    logResponse(`❌ API antigua también falló: ${e.message}`);
+                }
+
+                logResponse(`❌ No se pudo conectar con el rover en ${roverIp}`);
+
+            } catch (error) {
+                logResponse(`❌ Error de red: ${error.message}`);
+            }
+        }
+
+        // Manejar eventos de botones de control
+        document.querySelectorAll('.control-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const command = this.getAttribute('data-cmd');
+                sendCommand(command);
+            });
+        });
+
+        // Manejar evento de botón de prueba de conexión
+        testConnectionBtn.addEventListener('click', testConnection);
+
+        // Log inicial
+        logResponse('🚗 Sistema inicializado. Listo para enviar comandos al rover.');
+    });
+</script>
+{% endblock %}

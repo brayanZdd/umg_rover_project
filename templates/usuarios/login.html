@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .qr-login-container {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+
+    #qr-video {
+        width: 100%;
+        max-width: 400px;
+        height: 300px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .scan-result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 5px;
+        display: none;
+    }
+
+    .login-divider {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .login-divider:before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #dee2e6;
+    }
+
+    .login-divider span {
+        background: white;
+        padding: 0 15px;
+        position: relative;
+        color: #6c757d;
+    }
+
+    .qr-toggle-btn {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .qr-toggle-btn:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    .camera-status {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Mostrar mensajes normales de Django -->
+{% if messages %}
+<div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+        {% for message in messages %}
+        <div
+            class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show">
+            {{ message|safe }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Mostrar mensaje de registro exitoso de la sesión si existe -->
+{% if request.session.registro_exitoso_message %}
+<div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+        {{ request.session.registro_exitoso_message|safe }}
+    </div>
+</div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center py-3">
+                <h3>Inicio de Sesión</h3>
+            </div>
+            <div class="card-body p-4">
+                <!-- Formulario tradicional -->
+                <div id="traditional-login">
+                    <form method="post" id="login-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="login_type" value="traditional">
+
+                        <div class="mb-3">
+                            <label for="id_nickname" class="form-label">Nickname</label>
+                            <input type="text" name="nickname" id="id_nickname" class="form-control" required>
+                            {% if form.nickname.errors %}
+                            <div class="text-danger">{{ form.nickname.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_password" class="form-label">Contraseña</label>
+                            <input type="password" name="password" id="id_password" class="form-control" required>
+                            {% if form.password.errors %}
+                            <div class="text-danger">{{ form.password.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary py-2">Ingresar</button>
+                        </div>
+                    </form>
+
+                    <div class="login-divider">
+                        <span>O</span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="button" class="btn qr-toggle-btn py-2" onclick="toggleQRLogin()">
+                            <i class="bi bi-qr-code-scan"></i> Ingresar con Código QR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Login con QR -->
+                <div class="qr-login-container" id="qr-login">
+                    <h5 class="mb-3">Escanea tu código QR</h5>
+
+                    <div class="camera-status" id="camera-status">
+                        <i class="bi bi-camera"></i> Iniciando cámara...
+                    </div>
+
+                    <video id="qr-video" autoplay playsinline></video>
+
+                    <div class="scan-result alert" id="scan-result"></div>
+
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-secondary" onclick="toggleQRLogin()">
+                            <i class="bi bi-arrow-left"></i> Volver al login tradicional
+                        </button>
+                    </div>
+
+                    <!-- Formulario oculto para enviar datos del QR -->
+                    <form method="post" id="qr-login-form" style="display: none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="login_type" value="qr">
+                        <input type="hidden" name="qr_data" id="qr_data">
+                    </form>
+                </div>
+            </div>
+            <div class="card-footer text-center py-3">
+                ¿No tienes una cuenta? <a href="{% url 'registro' %}">Ven aquí 😏</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Incluir librería para escanear QR -->
+<script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+
+<script>
+    let stream = null;
+    let scanning = false;
+    let animationId = null;
+
+    function toggleQRLogin() {
+        const traditionalLogin = document.getElementById('traditional-login');
+        const qrLogin = document.getElementById('qr-login');
+
+        if (traditionalLogin.style.display === 'none') {
+            // Volver al login tradicional
+            traditionalLogin.style.display = 'block';
+            qrLogin.style.display = 'none';
+            stopQRScanner();
+        } else {
+            // Mostrar login con QR
+            traditionalLogin.style.display = 'none';
+            qrLogin.style.display = 'block';
+            setTimeout(() => {
+                startQRScanner();
+            }, 500); // Esperar un poco para que se renderice el elemento
+        }
+    }
+
+    function updateCameraStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('camera-status');
+        statusDiv.className = `camera-status alert-${type}`;
+        statusDiv.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}`;
+    }
+
+    async function startQRScanner() {
+        try {
+            updateCameraStatus('Solicitando acceso a la cámara...', 'info');
+
+            // Usar el mismo método que funciona en el registro
+            const video = document.getElementById('qr-video');
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment' // Intentar usar cámara trasera
+                    }
+                });
+
+                video.srcObject = stream;
+                video.play();
+
+                updateCameraStatus('¡Cámara activa! Apunta hacia tu código QR', 'success');
+
+                // Crear canvas para procesar los frames
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                scanning = true;
+
+                // Función para escanear QR en cada frame
+                function scanFrame() {
+                    if (!scanning) return;
+
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                        if (code) {
+                            onScanSuccess(code.data);
+                            return;
+                        }
+                    }
+
+                    animationId = requestAnimationFrame(scanFrame);
+                }
+
+                // Iniciar el escaneo cuando el video esté listo
+                video.addEventListener('loadedmetadata', () => {
+                    scanFrame();
+                });
+
+            } else {
+                throw new Error('Tu navegador no soporta la captura de cámara');
+            }
+
+        } catch (err) {
+            console.error("Error al iniciar el escáner:", err);
+            let errorMessage = 'Error al acceder a la cámara. ';
+
+            if (err.name === 'NotAllowedError' || err.message.includes('Permission')) {
+                errorMessage += 'Por favor, permite el acceso a la cámara en tu navegador.';
+            } else if (err.name === 'NotFoundError') {
+                errorMessage += 'No se encontró ninguna cámara.';
+            } else if (err.name === 'NotSupportedError') {
+                errorMessage += 'Tu navegador no soporta esta funcionalidad.';
+            } else {
+                errorMessage += err.message || 'Error desconocido.';
+            }
+
+            updateCameraStatus(errorMessage, 'danger');
+        }
+    }
+
+    function stopQRScanner() {
+        scanning = false;
+
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        const video = document.getElementById('qr-video');
+        video.srcObject = null;
+
+        updateCameraStatus('Cámara desactivada', 'info');
+    }
+
+    function onScanSuccess(decodedText) {
+        console.log(`Código QR escaneado: ${decodedText}`);
+
+        // Detener el escáner
+        stopQRScanner();
+
+        // Mostrar resultado
+        showScanResult("Código QR detectado. Verificando...", "info");
+
+        // Validar formato del QR (debe contener ID, Nickname y Correo)
+        if (decodedText.includes("ID:") && decodedText.includes("Nickname:") && decodedText.includes("Correo:")) {
+            showScanResult("¡Código QR válido! Iniciando sesión...", "success");
+
+            // Enviar el formulario con los datos del QR
+            document.getElementById('qr_data').value = decodedText;
+            document.getElementById('qr-login-form').submit();
+        } else {
+            showScanResult("Código QR inválido. Por favor, usa tu credencial oficial.", "danger");
+            // Reiniciar el escáner después de 3 segundos
+            setTimeout(() => {
+                document.getElementById('scan-result').style.display = 'none';
+                startQRScanner();
+            }, 3000);
+        }
+    }
+
+    function showScanResult(message, type) {
+        const resultDiv = document.getElementById('scan-result');
+        resultDiv.className = `scan-result alert alert-${type}`;
+        resultDiv.textContent = message;
+        resultDiv.style.display = 'block';
+    }
+
+    // Limpiar al salir de la página
+    window.addEventListener('beforeunload', function () {
+        stopQRScanner();
+    });
+
+    // Verificar HTTPS
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        console.warn('La cámara requiere HTTPS para funcionar correctamente');
+    }
+</script>
+{% endblock %}
