@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: umg-rover
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn umg_rover.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: umg_rover.settings
+      - key: SECRET_KEY
+        value: polloconpapasPvt@K3R!c0E$2001
