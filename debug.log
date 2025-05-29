@@ -37865,3 +37865,7 @@ INFO 2025-05-29 01:41:15,860 basehttp "GET /registro/ HTTP/1.1" 200 36089
 INFO 2025-05-29 01:41:15,860 basehttp "GET /registro/ HTTP/1.1" 200 36089
 INFO 2025-05-29 02:09:26,064 basehttp "GET / HTTP/1.1" 200 20124
 INFO 2025-05-29 02:09:26,064 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-29 03:06:08,361 autoreload Watching for file changes with StatReloader
+INFO 2025-05-29 03:06:08,361 autoreload Watching for file changes with StatReloader
+INFO 2025-05-29 03:06:16,472 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-29 03:06:16,472 basehttp "GET / HTTP/1.1" 200 20124
