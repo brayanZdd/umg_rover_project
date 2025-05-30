@@ -25,11 +25,11 @@ class RoverCommunicator:
     
     def _get_base_url(self):
         """Obtiene la URL base correctamente formateada"""
-        if self.rover_ip.startswith('http://') or self.rover_ip.startswith('https://'):
+        if self.rover_ip.startswith('') or self.rover_ip.startswith(''):
             # Quitar trailing slash si existe
-            return self.rover_ip.rstrip('/')
+            return self.rover_ip.rstrip('')
         else:
-            return f"http://{self.rover_ip}"
+            return f"{self.rover_ip}"
     
     def test_connection(self):
         """
