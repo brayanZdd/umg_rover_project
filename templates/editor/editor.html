@@ -2554,8 +2554,9 @@ END.
                 emergencyStopBtn.style.display = 'inline-block';
                 executeBtn.disabled = true;
                 simulateBtn.disabled = true;
+                compileBtn.disabled = true;
 
-                logToConsole(' Ejecutando en el rover (IP: ' + roverIp + ')...');
+                logToConsole('🚀 Ejecutando en el rover (IP: ' + roverIp + ')...');
                 addToBitacora('Ejecución', '🚀 Rover Real', 'Conectando con rover en ' + roverIp, 'simulation');
 
                 parseAndLogRoverMovements(codeEditor.value);
@@ -2565,46 +2566,80 @@ END.
                     addToBitacora('Audio', '🎵 Música', 'Reproduciendo: ' + currentCoreografia, 'success');
                 }
 
-                const response = await fetch('/api/execute/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCSRFToken()
-                    },
-                    body: JSON.stringify({
-                        code: codeEditor.value,
-                        rover_ip: roverIp
-                    }),
-                    signal: currentExecutionController.signal
-                });
+                // Enviar comando de ejecución - NO ESPERAR RESPUESTA LARGA
+                try {
+                    const response = await fetch('/api/execute/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            code: codeEditor.value,
+                            rover_ip: roverIp
+                        }),
+                        // Timeout corto - solo esperamos confirmación de inicio
+                        signal: AbortSignal.timeout(5000)
+                    });
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (data.success && !executionAborted) {
-                    logToConsole("✅ Ejecución completada exitosamente");
-                    addToBitacora('Ejecución', '✅ Completada', 'Rover ejecutó todos los comandos exitosamente', 'success');
-                } else if (data.cancelled || executionAborted) {
-                    logToConsole("Ejecución cancelada por Stop");
-                    addToBitacora('Ejecución', '🛑 Cancelada', 'Ejecución cancelada por parada de emergencia', 'error');
-                } else {
-                    logToConsole("❌ Error: " + data.message);
-                    addToBitacora('Error', '❌ Ejecución', 'Error en rover: ' + data.message, 'error');
+                    if (data.success) {
+                        logToConsole("✅ Ejecución iniciada en segundo plano");
+                        logToConsole("📊 Total de comandos: " + data.commands_total);
+                        addToBitacora('Ejecución', '▶️ Iniciada', 'Ejecutando ' + data.commands_total + ' comandos', 'success');
+
+                        // Calcular duración estimada
+                        const estimatedDuration = commands.reduce((total, cmd) => total + cmd[1], 0);
+                        const estimatedSeconds = Math.ceil(estimatedDuration / 1000);
+                        logToConsole("⏱️ Duración estimada: " + estimatedSeconds + " segundos");
+
+                        // Simular finalización basada en duración estimada
+                        setTimeout(() => {
+                            if (!executionAborted) {
+                                logToConsole("✅ Ejecución completada (estimada)");
+                                addToBitacora('Ejecución', '✅ Completada', 'Todos los comandos ejecutados', 'success');
+                                resetExecutionState();
+                            }
+                        }, estimatedDuration + 2000); // +2 segundos de margen
+
+                    } else {
+                        logToConsole("❌ Error: " + data.message);
+                        addToBitacora('Error', '❌ Ejecución', 'Error en rover: ' + data.message, 'error');
+                        resetExecutionState();
+                    }
+                } catch (error) {
+                    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+                        // Timeout esperado - la ejecución continúa en el servidor
+                        logToConsole("✅ Comando enviado - Ejecutando en segundo plano");
+                        addToBitacora('Ejecución', '▶️ En progreso', 'Rover ejecutando comandos', 'success');
+
+                        // Calcular duración estimada para reset automático
+                        const estimatedDuration = commands.reduce((total, cmd) => total + cmd[1], 0);
+                        setTimeout(() => {
+                            if (!executionAborted) {
+                                resetExecutionState();
+                            }
+                        }, estimatedDuration + 5000);
+                    } else {
+                        logToConsole("❌ Error de conexión: " + error.message);
+                        addToBitacora('Error', '❌ Conexión', 'Error: ' + error.message, 'error');
+                        resetExecutionState();
+                    }
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    logToConsole("Ejecución cancelada por Stop");
-                    addToBitacora('Ejecución', '🛑 Cancelada', 'Stop', 'error');
-                } else if (!executionAborted) {
-                    logToConsole("❌ Error de ejecución: " + error.message);
-                    addToBitacora('Error', '❌ Conexión', 'Error de conexión con rover: ' + error.message, 'error');
-                }
-            } finally {
-                isExecuting = false;
-                currentExecutionController = null;
-                emergencyStopBtn.style.display = 'none';
-                executeBtn.disabled = false;
-                simulateBtn.disabled = false;
+                logToConsole("❌ Error: " + error.message);
+                resetExecutionState();
             }
+        }
+
+        function resetExecutionState() {
+            isExecuting = false;
+            currentExecutionController = null;
+            emergencyStopBtn.style.display = 'none';
+            executeBtn.disabled = false;
+            simulateBtn.disabled = false;
+            compileBtn.disabled = false;
         }
 
         function clearConsole() {

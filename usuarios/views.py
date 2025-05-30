@@ -1636,7 +1636,7 @@ def _execute_commands_in_thread(commands, rover_ip):
 @csrf_exempt 
 def execute_view(request):
     """
-    Ejecución EN CHUNKS para evitar timeouts de ngrok
+    Ejecución ASÍNCRONA - No espera que termine
     """
     global _execution_thread, _stop_signal
 
@@ -1665,58 +1665,26 @@ def execute_view(request):
 
             print(f"📋 {len(commands)} comandos compilados")
 
-            # DIVIDIR EN CHUNKS para evitar timeout de ngrok
-            chunk_size = 20  # Ejecutar máximo 20 comandos por chunk
-            chunks = [commands[i:i + chunk_size] for i in range(0, len(commands), chunk_size)]
-            
-            print(f"📦 Dividido en {len(chunks)} chunks de máximo {chunk_size} comandos")
-
             # LIMPIAR SEÑAL DE PARADA
             _stop_signal.clear()
 
-            # Función para ejecutar chunks
-            def execute_chunks():
-                global _stop_signal
-                from .rover_communication import RoverCommunicator
-                rover_comm = RoverCommunicator(rover_ip)
-                
-                for chunk_num, chunk in enumerate(chunks):
-                    if _stop_signal.is_set():
-                        print(f"🛑 Ejecución cancelada en chunk {chunk_num + 1}")
-                        break
-                    
-                    print(f"📦 Ejecutando chunk {chunk_num + 1}/{len(chunks)}")
-                    
-                    # Ejecutar comandos del chunk
-                    for i, (cmd, duration) in enumerate(chunk):
-                        if _stop_signal.is_set():
-                            rover_comm.send_command('S', 0)
-                            return
-                        
-                        rover_comm.send_command(cmd, duration)
-                        
-                        # Espera mínima entre comandos
-                        time.sleep(0.005)  # 5ms
-                    
-                    # Pequeña pausa entre chunks
-                    if chunk_num < len(chunks) - 1:
-                        time.sleep(0.1)  # 100ms entre chunks
-
             # CREAR Y LANZAR THREAD
             _execution_thread = threading.Thread(
-                target=execute_chunks,
+                target=_execute_commands_in_thread,
+                args=(commands, rover_ip),
                 daemon=True,
                 name="RoverExecutionThread"
             )
             
             _execution_thread.start()
-            
-            # NO ESPERAR - Responder inmediatamente
+            print("🚀 Thread lanzado")
+
+            # RESPONDER INMEDIATAMENTE - NO ESPERAR
             return JsonResponse({
                 "success": True,
-                "message": "Ejecución iniciada",
+                "message": "Ejecución iniciada en segundo plano",
                 "commands_total": len(commands),
-                "chunks": len(chunks)
+                "status": "running"
             })
 
         except Exception as e:
@@ -1851,3 +1819,21 @@ def status_view(request):
         "success": False,
         "message": "Método no permitido"
     })
+# Agrega esta vista en views.py si no la tienes:
+
+def execution_status_view(request):
+    """
+    Vista para verificar el estado de la ejecución actual
+    """
+    global _execution_thread, _stop_signal
+    
+    is_running = _execution_thread is not None and _execution_thread.is_alive()
+    
+    return JsonResponse({
+        "success": True,
+        "is_running": is_running,
+        "stop_requested": _stop_signal.is_set() if _stop_signal else False
+    })
+
+# Y agrega en urls.py:
+# 
