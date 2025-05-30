@@ -188,9 +188,6 @@ class UMGTranspiler:
         return functions[func_name](param)
 
     def execute_commands(self, commands, rover_communicator):
-        """
-        VERSIÓN OPTIMIZADA - Sin delays innecesarios
-        """
         if isinstance(commands, dict) and "error" in commands:
             return commands
 
@@ -200,16 +197,18 @@ class UMGTranspiler:
             for cmd_data in commands:
                 cmd, duration = cmd_data
                 
-                # Enviar comando SIN esperar respuesta completa
+                # Enviar comando
                 result = rover_communicator.send_command(cmd, duration)
                 results.append(result)
 
                 if not result["success"]:
                     return {"error": f"Error al ejecutar comando {cmd}", "results": results}
 
-                # Solo un pequeño delay para no saturar el ESP8266
-                # NO esperar la duración completa - el rover maneja los tiempos
-                time.sleep(self.command_delay)  # Usar el delay configurado (10ms)
+                # Esperar la duración del comando para que se complete
+                time.sleep(duration / 1000.0)
+                
+                # Delay mínimo entre comandos (5ms)
+                time.sleep(0.005)
 
             return {"success": True, "results": results}
 

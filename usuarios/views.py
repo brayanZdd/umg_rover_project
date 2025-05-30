@@ -1569,7 +1569,7 @@ def emergency_stop_view(request):
 
 def _execute_commands_in_thread(commands, rover_ip):
     """
-    VERSIÓN MEJORADA - Verifica stop signal más frecuentemente
+    Ejecuta comandos respetando sus duraciones pero verificando stop frecuentemente
     """
     global _stop_signal
     
@@ -1580,12 +1580,10 @@ def _execute_commands_in_thread(commands, rover_ip):
         total_commands = len(commands)
         print(f"🚀 Thread ejecutando {total_commands} comandos")
         
-        # NO usar transpiler.execute_commands - hacerlo manualmente para control fino
         for i, cmd_data in enumerate(commands):
-            # VERIFICAR STOP ANTES DE CADA COMANDO
+            # Verificar STOP antes de cada comando
             if _stop_signal.is_set():
                 print(f"💀 STOP detectado en comando {i+1}/{total_commands}")
-                # Enviar STOP inmediatamente
                 rover_comm.send_command('S', 0)
                 print(f"🗑️ Thread terminado. Descartados {total_commands - i} comandos")
                 return
@@ -1598,21 +1596,25 @@ def _execute_commands_in_thread(commands, rover_ip):
                 # Enviar comando
                 result = rover_comm.send_command(cmd, duration)
                 
-                # En lugar de esperar toda la duración, dividirla en chunks pequeños
-                # para verificar stop signal más frecuentemente
+                # IMPORTANTE: Esperar la duración del comando
+                # Pero dividir en chunks pequeños para verificar stop signal
                 elapsed = 0
                 check_interval = 50  # Verificar cada 50ms
                 
-                while elapsed < duration and not _stop_signal.is_set():
-                    sleep_time = min(check_interval, duration - elapsed)
-                    time.sleep(sleep_time / 1000.0)
-                    elapsed += sleep_time
+                while elapsed < duration:
+                    # Si hay señal de stop, salir inmediatamente
+                    if _stop_signal.is_set():
+                        print(f"💀 STOP detectado durante comando {i+1}")
+                        rover_comm.send_command('S', 0)
+                        return
+                    
+                    # Esperar el mínimo entre check_interval y el tiempo restante
+                    wait_time = min(check_interval, duration - elapsed)
+                    time.sleep(wait_time / 1000.0)  # Convertir a segundos
+                    elapsed += wait_time
                 
-                # Si se activó stop durante la espera
-                if _stop_signal.is_set():
-                    print(f"💀 STOP detectado durante ejecución del comando {i+1}")
-                    rover_comm.send_command('S', 0)
-                    return
+                # Delay mínimo entre comandos (5ms)
+                time.sleep(0.005)
                 
             except Exception as cmd_error:
                 print(f"❌ Error en comando {i+1}: {str(cmd_error)}")
@@ -1629,7 +1631,6 @@ def _execute_commands_in_thread(commands, rover_ip):
                 rover_comm.send_command('S', 0)
             except:
                 pass
-
 # Reemplaza execute_view en views.py con esta versión
 
 @csrf_exempt 
