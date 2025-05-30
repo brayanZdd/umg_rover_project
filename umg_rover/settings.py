@@ -201,7 +201,7 @@ LOGGING = {
     },
 }
 
-# ===== CONFIGURACIÓN PARA RENDER CON MYSQL =====
+# ===== CONFIGURACIÓN PARA RENDER =====
 # Agregar esto AL FINAL de settings.py
 
 import os
@@ -225,8 +225,8 @@ ALLOWED_HOSTS.extend([
 # Debug en False para producción
 if 'RENDER' in os.environ:
     DEBUG = False
-    # Usar MySQL en producción
-    DATABASES['default'] = DATABASES['mysql']
+    # NO TOCAR LA BASE DE DATOS - SQLite sigue siendo default
+    # MySQL está disponible como DATABASES['mysql'] para tus procedimientos
     
 # Whitenoise para servir archivos estáticos
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
