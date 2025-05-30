@@ -1,4 +1,4 @@
-# rover_communication.py - VERSIÓN CORREGIDA
+# rover_communication.py - VERSIÓN FINAL OPTIMIZADA
 
 import requests
 import logging
@@ -19,7 +19,17 @@ class RoverCommunicator:
             rover_ip: IP del rover. Si es None, se usa la configuración predeterminada
         """
         self.rover_ip = rover_ip or getattr(settings, 'ROVER_IP', '192.168.1.98')
+        self.session = requests.Session()
+        self.session.headers.update({'ngrok-skip-browser-warning': 'true'})
         logger.info(f"Inicializado RoverCommunicator con IP: {self.rover_ip}")
+    
+    def _get_base_url(self):
+        """Obtiene la URL base correctamente formateada"""
+        if self.rover_ip.startswith('http://') or self.rover_ip.startswith('https://'):
+            # Quitar trailing slash si existe
+            return self.rover_ip.rstrip('/')
+        else:
+            return f"http://{self.rover_ip}"
     
     def test_connection(self):
         """
@@ -28,12 +38,14 @@ class RoverCommunicator:
         Returns:
             bool: True si la conexión es exitosa, False en caso contrario
         """
+        base_url = self._get_base_url()
+        
         try:
             # Primero intentar con la API nueva
-            url = f"http://{self.rover_ip}/status"
+            url = f"{base_url}/status"
             logger.info(f"Probando conexión con rover en: {url}")
             
-            response = requests.get(url, timeout=2)
+            response = self.session.get(url, timeout=1)
             if response.status_code == 200:
                 logger.info("Conexión exitosa (API nueva)")
                 return True
@@ -42,10 +54,10 @@ class RoverCommunicator:
         
         try:
             # Si la API nueva falla, intentar con la API antigua
-            url = f"http://{self.rover_ip}/"
+            url = f"{base_url}/"
             logger.info(f"Probando conexión con rover (API antigua) en: {url}")
             
-            response = requests.get(url, timeout=2)
+            response = self.session.get(url, timeout=1)
             if response.status_code == 200:
                 logger.info("Conexión exitosa (API antigua)")
                 return True
@@ -56,7 +68,7 @@ class RoverCommunicator:
     
     def send_command(self, command, duration=0):
         """
-        Envía un comando al rover
+        Envía un comando al rover - VERSIÓN OPTIMIZADA
         
         Args:
             command: Comando a enviar (F, B, L, R, etc.)
@@ -65,52 +77,68 @@ class RoverCommunicator:
         Returns:
             dict: Respuesta del rover
         """
+        base_url = self._get_base_url()
+        
         try:
             # Intentar primero con formato nuevo
             if duration > 0:
-                url = f"http://{self.rover_ip}/command?cmd={command}&duration={duration}"
+                url = f"{base_url}/command?cmd={command}&duration={duration}"
             else:
-                url = f"http://{self.rover_ip}/command?cmd={command}"
+                url = f"{base_url}/command?cmd={command}"
             
             logger.info(f"Enviando comando: {url}")
-            response = requests.get(url, timeout=5)
+            
+            # TIMEOUT MUY CORTO para no esperar respuesta
+            response = self.session.get(url, timeout=0.2)
             
             if response.status_code == 200:
                 logger.info(f"Comando enviado exitosamente (API nueva)")
                 return {
                     "success": True,
                     "message": "Comando enviado exitosamente",
-                    "response": response.text
+                    "response": "OK"
                 }
+        except requests.exceptions.Timeout:
+            # Timeout esperado - comando enviado
+            return {
+                "success": True,
+                "message": "Comando enviado (timeout esperado)",
+                "response": "OK"
+            }
         except Exception as e:
             logger.warning(f"Error al enviar comando con API nueva: {str(e)}")
         
         try:
             # Si falla, intentar con formato antiguo
-            url = f"http://{self.rover_ip}/?State={command}"
+            url = f"{base_url}/?State={command}"
             logger.info(f"Intentando con formato antiguo: {url}")
             
-            response = requests.get(url, timeout=5)
+            response = self.session.get(url, timeout=0.2)
             
-            if response.status_code == 200:
+            if response.status_code == 200 or response.status_code == 502:
                 logger.info(f"Comando enviado exitosamente (API antigua)")
                 
-                # Si hay duración, manejarla manualmente
-                if duration > 0:
-                    logger.info(f"Esperando {duration}ms antes de detener...")
-                    time.sleep(duration / 1000)  # Convertir ms a segundos
-                    
-                    # Enviar comando de detención
-                    stop_url = f"http://{self.rover_ip}/?State=S"
-                    requests.get(stop_url, timeout=2)
-                    logger.info("Comando de detención enviado")
-                
+                # NO ESPERAR si hay duración - el ESP8266 lo maneja
                 return {
                     "success": True,
                     "message": "Comando enviado exitosamente (API antigua)",
-                    "response": response.text
+                    "response": "OK"
                 }
+        except requests.exceptions.Timeout:
+            # Timeout esperado
+            return {
+                "success": True,
+                "message": "Comando enviado (timeout esperado)",
+                "response": "OK"
+            }
         except Exception as e:
+            # Ignorar errores 502 de ngrok
+            if "502" in str(e):
+                return {
+                    "success": True,
+                    "message": "Comando enviado (ngrok 502 ignorado)",
+                    "response": "OK"
+                }
             logger.error(f"Error al enviar comando con API antigua: {str(e)}")
         
         return {
@@ -130,16 +158,15 @@ class RoverCommunicator:
         Returns:
             dict: Estado básico del envío
         """
+        base_url = self._get_base_url()
+        
         def _send_async(url):
             """Función auxiliar para enviar comando en thread separado"""
             try:
                 # Usar timeout muy corto y no esperar respuesta
-                requests.get(url, timeout=0.1)
-            except requests.exceptions.Timeout:
-                # Esperado - no queremos esperar respuesta
-                pass
-            except Exception:
-                # Ignorar otros errores en modo emergencia
+                self.session.get(url, timeout=0.05)
+            except:
+                # Ignorar todos los errores
                 pass
         
         try:
@@ -147,12 +174,12 @@ class RoverCommunicator:
             
             # API nueva
             if duration > 0:
-                url_new = f"http://{self.rover_ip}/command?cmd={command}&duration={duration}"
+                url_new = f"{base_url}/command?cmd={command}&duration={duration}"
             else:
-                url_new = f"http://{self.rover_ip}/command?cmd={command}"
+                url_new = f"{base_url}/command?cmd={command}"
             
             # API antigua
-            url_old = f"http://{self.rover_ip}/?State={command}"
+            url_old = f"{base_url}/?State={command}"
             
             # Enviar a ambas APIs en threads separados
             thread1 = threading.Thread(target=_send_async, args=(url_new,))
@@ -176,7 +203,6 @@ class RoverCommunicator:
     def emergency_stop(self):
         """
         Ejecuta una parada de emergencia completa del rover.
-        AHORA DENTRO DE LA CLASE - CORREGIDO
         
         Returns:
             dict: Resultado de la operación de emergencia

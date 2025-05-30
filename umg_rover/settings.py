@@ -200,31 +200,3 @@ LOGGING = {
         },
     },
 }
-# ===== CONFIGURACIÓN PARA RENDER =====
-# Agregar esto AL FINAL de settings.py
-
-# Para Render - Producción
-import os
-
-# Secret Key para producción
-SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
-
-# Configuración de ALLOWED_HOSTS para Render
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-# Debug en False para producción
-if 'RENDER' in os.environ:
-    DEBUG = False
-    
-# Whitenoise para servir archivos estáticos
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-
-# Configuración de archivos estáticos para producción
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Base de datos para producción (opcional - si quieres usar PostgreSQL en Render)
-if 'DATABASE_URL' in os.environ:
-    import dj_database_url
-    DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))

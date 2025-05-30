@@ -1569,8 +1569,8 @@ def emergency_stop_view(request):
 
 def _execute_commands_in_thread(commands, rover_ip):
     """
-    Función que ejecuta comandos en thread separado
-    CORREGIDO: Se detiene COMPLETAMENTE al detectar señal de STOP
+    Función que ejecuta comandos en thread separado - VERSIÓN OPTIMIZADA
+    Sin delays innecesarios para mantener sincronía con música
     """
     global _stop_signal
     
@@ -1583,6 +1583,10 @@ def _execute_commands_in_thread(commands, rover_ip):
         
         # Flag para rastrear si ya enviamos STOP
         stop_sent = False
+        
+        # Tiempo de inicio para sincronización precisa
+        start_time = time.time()
+        accumulated_time = 0
 
         for i, cmd_data in enumerate(commands):
             # VERIFICAR SEÑAL DE PARADA ANTES DE CADA COMANDO
@@ -1607,66 +1611,32 @@ def _execute_commands_in_thread(commands, rover_ip):
             try:
                 cmd, duration = cmd_data
                 
+                # Calcular cuándo debería ejecutarse este comando
+                target_time = start_time + (accumulated_time / 1000.0)
+                current_time = time.time()
+                
+                # Si estamos atrasados, no esperar
+                if current_time < target_time:
+                    wait_time = target_time - current_time
+                    if wait_time > 0:
+                        time.sleep(wait_time)
+                
                 print(f"📡 Ejecutando comando {i+1}/{total_commands}: {cmd} por {duration}ms")
                 
-                # ENVIAR COMANDO
+                # ENVIAR COMANDO SIN ESPERAR RESPUESTA COMPLETA
                 result = rover_comm.send_command(cmd, duration)
                 
-                # SLEEP CON VERIFICACIONES
-                if duration > 0:
-                    sleep_time = duration / 1000.0
-                    elapsed = 0
-                    check_interval = 0.05  # Verificar cada 50ms
-                    
-                    while elapsed < sleep_time:
-                        if _stop_signal.is_set():
-                            print(f"💀 STOP detectado durante comando {i+1}")
-                            
-                            if not stop_sent:
-                                # Enviar STOP inmediatamente
-                                try:
-                                    rover_comm.send_command('S', 100)
-                                    print("✅ STOP enviado al rover")
-                                except:
-                                    pass
-                                stop_sent = True
-                            
-                            print(f"🗑️ Thread terminado durante comando. Descartados {total_commands - i - 1} comandos restantes")
-                            return  # <-- SALIR COMPLETAMENTE
-                        
-                        time.sleep(check_interval)
-                        elapsed += check_interval
-
-                # PAUSA ENTRE COMANDOS CON VERIFICACIÓN
-                if _stop_signal.is_set():
-                    if not stop_sent:
-                        print(f"💀 STOP detectado entre comandos")
-                        try:
-                            rover_comm.send_command('S', 100)
-                            print("✅ STOP enviado al rover")
-                        except:
-                            pass
-                        stop_sent = True
-                    
-                    print(f"🗑️ Thread terminado. Descartados {total_commands - i - 1} comandos restantes")
-                    return  # <-- SALIR COMPLETAMENTE
+                # Acumular tiempo para siguiente comando
+                accumulated_time += duration
                 
-                # Pausa pequeña entre comandos
-                time.sleep(0.2)
+                # Solo una pequeña pausa entre comandos si es necesario
+                # Reducido de 200ms a 10ms
+                time.sleep(0.01)
 
             except Exception as cmd_error:
                 print(f"❌ Error en comando {i+1}: {str(cmd_error)}")
-                
-                # Si hay error Y señal de STOP, enviar STOP y salir
-                if _stop_signal.is_set() and not stop_sent:
-                    try:
-                        rover_comm.send_command('S', 100)
-                    except:
-                        pass
-                    stop_sent = True
-                    
-                print("❌ Thread terminado por error")
-                return  # <-- SALIR COMPLETAMENTE
+                # Continuar con siguiente comando en lugar de terminar
+                continue
 
         print(f"✅ Thread completado normalmente: {total_commands} comandos ejecutados")
         
@@ -1676,9 +1646,11 @@ def _execute_commands_in_thread(commands, rover_ip):
         # En caso de error crítico, si hay señal de STOP, enviar STOP
         if _stop_signal.is_set():
             try:
-                requests.get(f"http://{rover_ip}/?State=S", timeout=0.3)
+                base_url = rover_ip if rover_ip.startswith('http') else f"http://{rover_ip}"
+                requests.get(f"{base_url}/?State=S", timeout=0.3, headers={'ngrok-skip-browser-warning': 'true'})
                 print("✅ STOP de emergencia enviado")
             except:
+                pass
                 pass
 
 @csrf_exempt 

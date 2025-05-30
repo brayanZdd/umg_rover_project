@@ -259,6 +259,63 @@
         animation: pulse 1s infinite;
     }
 
+    /* Agregar estos estilos para hacer el simulador responsive */
+
+    /* Simulador responsive para móviles */
+    @media (max-width: 768px) {
+        .simulator-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95vw !important;
+            max-width: none !important;
+            height: 80vh !important;
+            z-index: 1000;
+        }
+
+        .simulator-canvas {
+            width: 100% !important;
+            height: calc(100% - 60px) !important;
+        }
+
+        .rover-sprite {
+            width: 30px !important;
+            height: 30px !important;
+        }
+
+        .path-point {
+            width: 4px !important;
+            height: 4px !important;
+        }
+    }
+
+    /* Para pantallas muy pequeñas */
+    @media (max-width: 480px) {
+        .simulator-container {
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+        }
+
+        .simulator-header {
+            padding: 10px 15px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .simulator-canvas {
+            background-size: 15px 15px !important;
+        }
+    }
+
+    /* Centrar el simulador siempre */
+    .simulator-container {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+
     @keyframes pulse {
 
         0%,
@@ -820,9 +877,8 @@
                     <!-- Campo IP -->
                     <div class="col-auto">
                         <div class="input-group mb-0" style="max-width: 400px;">
-                            <span class="input-group-text">Rover IP:</span>
-                            <input type="text" id="rover-ip" class="form-control" placeholder="192.168.1.89"
-                                value="192.168.1.89">
+                            <span class="input-group-text">Rover URL:</span>
+                            <input type="text" id="rover-ip" class="form-control" placeholder="" value="">
                         </div>
                     </div>
 
