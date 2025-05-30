@@ -78,8 +78,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text">IP del Rover:</span>
-                                    <input type="text" id="rover-ip" class="form-control" value="192.168.">
+                                    <span class="input-group-text">URL del Rover:</span>
+                                    <input type="text" id="rover-ip" class="form-control" value="">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -147,7 +147,7 @@
             const duration = commandDurationInput.value;
 
             if (!roverIp) {
-                logResponse('❌ Error: IP del rover no especificada');
+                logResponse('❌ Error: URL del rover no especificada');
                 return;
             }
 

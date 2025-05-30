@@ -66,85 +66,99 @@ class RoverCommunicator:
         
         return False
     
-    def send_command(self, command, duration=0):
-        """
-        Envía un comando al rover - VERSIÓN OPTIMIZADA
+def send_command(self, command, duration=0):
+    """
+    Envía un comando al rover - VERSIÓN OPTIMIZADA PARA NGROK
+    """
+    base_url = self._get_base_url()
+    
+    # Para ngrok, usar timeouts más largos pero no esperar respuesta
+    timeout = 0.5 if 'ngrok' in base_url else 0.2
+    
+    try:
+        # Construir URL
+        if duration > 0:
+            url = f"{base_url}/command?cmd={command}&duration={duration}"
+        else:
+            url = f"{base_url}/command?cmd={command}"
         
-        Args:
-            command: Comando a enviar (F, B, L, R, etc.)
-            duration: Duración del comando en milisegundos
+        logger.debug(f"Enviando: {url}")
         
-        Returns:
-            dict: Respuesta del rover
-        """
-        base_url = self._get_base_url()
-        
-        try:
-            # Intentar primero con formato nuevo
-            if duration > 0:
-                url = f"{base_url}/command?cmd={command}&duration={duration}"
-            else:
-                url = f"{base_url}/command?cmd={command}"
-            
-            logger.info(f"Enviando comando: {url}")
-            
-            # TIMEOUT MUY CORTO para no esperar respuesta
-            response = self.session.get(url, timeout=0.2)
-            
-            if response.status_code == 200:
-                logger.info(f"Comando enviado exitosamente (API nueva)")
-                return {
-                    "success": True,
-                    "message": "Comando enviado exitosamente",
-                    "response": "OK"
-                }
-        except requests.exceptions.Timeout:
-            # Timeout esperado - comando enviado
-            return {
-                "success": True,
-                "message": "Comando enviado (timeout esperado)",
-                "response": "OK"
-            }
-        except Exception as e:
-            logger.warning(f"Error al enviar comando con API nueva: {str(e)}")
-        
-        try:
-            # Si falla, intentar con formato antiguo
-            url = f"{base_url}/?State={command}"
-            logger.info(f"Intentando con formato antiguo: {url}")
-            
-            response = self.session.get(url, timeout=0.2)
-            
-            if response.status_code == 200 or response.status_code == 502:
-                logger.info(f"Comando enviado exitosamente (API antigua)")
-                
-                # NO ESPERAR si hay duración - el ESP8266 lo maneja
-                return {
-                    "success": True,
-                    "message": "Comando enviado exitosamente (API antigua)",
-                    "response": "OK"
-                }
-        except requests.exceptions.Timeout:
-            # Timeout esperado
-            return {
-                "success": True,
-                "message": "Comando enviado (timeout esperado)",
-                "response": "OK"
-            }
-        except Exception as e:
-            # Ignorar errores 502 de ngrok
-            if "502" in str(e):
-                return {
-                    "success": True,
-                    "message": "Comando enviado (ngrok 502 ignorado)",
-                    "response": "OK"
-                }
-            logger.error(f"Error al enviar comando con API antigua: {str(e)}")
-        
-        return {
-            "success": False,
-            "message": f"No se pudo enviar el comando {command} al rover"
+        # Headers especiales para ngrok
+        headers = {
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'UMG-Rover/1.0'
         }
+        
+        # Enviar comando - NO ESPERAR RESPUESTA COMPLETA
+        try:
+            response = self.session.get(
+                url, 
+                timeout=timeout,
+                headers=headers,
+                stream=True  # No descargar todo el contenido
+            )
+            
+            # Solo verificar status code, no leer el body
+            if response.status_code < 400:
+                response.close()  # Cerrar conexión inmediatamente
+                return {
+                    "success": True,
+                    "message": "Comando enviado",
+                    "response": "OK"
+                }
+        except requests.exceptions.Timeout:
+            # Timeout es ESPERADO y NORMAL
+            return {
+                "success": True,
+                "message": "Comando enviado (timeout normal)",
+                "response": "OK"
+            }
+        except requests.exceptions.ConnectionError as e:
+            # ngrok puede cerrar la conexión - esto es normal
+            if any(x in str(e).lower() for x in ['broken pipe', 'connection reset', 'aborted']):
+                return {
+                    "success": True,
+                    "message": "Comando enviado (conexión cerrada por ngrok)",
+                    "response": "OK"
+                }
+            raise
+            
+    except Exception as e:
+        # Para errores 502/504 de ngrok, asumir éxito
+        if any(code in str(e) for code in ['502', '504']):
+            return {
+                "success": True,
+                "message": "Comando enviado (gateway timeout ignorado)",
+                "response": "OK"
+            }
+        
+        logger.error(f"Error real al enviar comando: {str(e)}")
+        
+    # Si llegamos aquí, intentar API antigua
+    try:
+        url = f"{base_url}/?State={command}"
+        response = self.session.get(
+            url, 
+            timeout=timeout,
+            headers=headers,
+            stream=True
+        )
+        
+        if response.status_code < 400:
+            response.close()
+            return {
+                "success": True,
+                "message": "Comando enviado (API antigua)",
+                "response": "OK"
+            }
+    except:
+        pass
+    
+    return {
+        "success": False,
+        "message": f"No se pudo enviar el comando {command}"
+    }
     
     def send_command_no_wait(self, command, duration=0):
         """

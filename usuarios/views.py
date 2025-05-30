@@ -1569,8 +1569,7 @@ def emergency_stop_view(request):
 
 def _execute_commands_in_thread(commands, rover_ip):
     """
-    Función que ejecuta comandos en thread separado - VERSIÓN OPTIMIZADA
-    Sin delays innecesarios para mantener sincronía con música
+    VERSIÓN MEJORADA - Verifica stop signal más frecuentemente
     """
     global _stop_signal
     
@@ -1581,88 +1580,67 @@ def _execute_commands_in_thread(commands, rover_ip):
         total_commands = len(commands)
         print(f"🚀 Thread ejecutando {total_commands} comandos")
         
-        # Flag para rastrear si ya enviamos STOP
-        stop_sent = False
-        
-        # Tiempo de inicio para sincronización precisa
-        start_time = time.time()
-        accumulated_time = 0
-
+        # NO usar transpiler.execute_commands - hacerlo manualmente para control fino
         for i, cmd_data in enumerate(commands):
-            # VERIFICAR SEÑAL DE PARADA ANTES DE CADA COMANDO
+            # VERIFICAR STOP ANTES DE CADA COMANDO
             if _stop_signal.is_set():
-                if not stop_sent:
-                    print(f"💀 STOP detectado en comando {i+1}/{total_commands}")
-                    print("🛑 Enviando STOP final y terminando thread")
-                    
-                    # Enviar UN SOLO comando STOP
-                    try:
-                        rover_comm.send_command('S', 100)
-                        print("✅ STOP enviado al rover")
-                    except Exception as e:
-                        print(f"⚠️ Error al enviar STOP: {e}")
-                    
-                    stop_sent = True
-                
-                # TERMINAR EL THREAD COMPLETAMENTE
+                print(f"💀 STOP detectado en comando {i+1}/{total_commands}")
+                # Enviar STOP inmediatamente
+                rover_comm.send_command('S', 0)
                 print(f"🗑️ Thread terminado. Descartados {total_commands - i} comandos")
-                return  # <-- SALIR COMPLETAMENTE
-
+                return
+            
             try:
                 cmd, duration = cmd_data
                 
-                # Calcular cuándo debería ejecutarse este comando
-                target_time = start_time + (accumulated_time / 1000.0)
-                current_time = time.time()
-                
-                # Si estamos atrasados, no esperar
-                if current_time < target_time:
-                    wait_time = target_time - current_time
-                    if wait_time > 0:
-                        time.sleep(wait_time)
-                
                 print(f"📡 Ejecutando comando {i+1}/{total_commands}: {cmd} por {duration}ms")
                 
-                # ENVIAR COMANDO SIN ESPERAR RESPUESTA COMPLETA
+                # Enviar comando
                 result = rover_comm.send_command(cmd, duration)
                 
-                # Acumular tiempo para siguiente comando
-                accumulated_time += duration
+                # En lugar de esperar toda la duración, dividirla en chunks pequeños
+                # para verificar stop signal más frecuentemente
+                elapsed = 0
+                check_interval = 50  # Verificar cada 50ms
                 
-                # Solo una pequeña pausa entre comandos si es necesario
-                # Reducido de 200ms a 10ms
-                time.sleep(0.01)
-
+                while elapsed < duration and not _stop_signal.is_set():
+                    sleep_time = min(check_interval, duration - elapsed)
+                    time.sleep(sleep_time / 1000.0)
+                    elapsed += sleep_time
+                
+                # Si se activó stop durante la espera
+                if _stop_signal.is_set():
+                    print(f"💀 STOP detectado durante ejecución del comando {i+1}")
+                    rover_comm.send_command('S', 0)
+                    return
+                
             except Exception as cmd_error:
                 print(f"❌ Error en comando {i+1}: {str(cmd_error)}")
-                # Continuar con siguiente comando en lugar de terminar
                 continue
-
-        print(f"✅ Thread completado normalmente: {total_commands} comandos ejecutados")
+        
+        print(f"✅ Thread completado: {total_commands} comandos ejecutados")
         
     except Exception as e:
         print(f"❌ Error crítico en thread: {str(e)}")
-        
-        # En caso de error crítico, si hay señal de STOP, enviar STOP
         if _stop_signal.is_set():
             try:
-                base_url = rover_ip if rover_ip.startswith('http') else f"http://{rover_ip}"
-                requests.get(f"{base_url}/?State=S", timeout=0.3, headers={'ngrok-skip-browser-warning': 'true'})
-                print("✅ STOP de emergencia enviado")
+                from .rover_communication import RoverCommunicator
+                rover_comm = RoverCommunicator(rover_ip)
+                rover_comm.send_command('S', 0)
             except:
                 pass
-                pass
+
+# Reemplaza execute_view en views.py con esta versión
 
 @csrf_exempt 
 def execute_view(request):
     """
-    Ejecución EN THREAD SEPARADO
+    Ejecución EN CHUNKS para evitar timeouts de ngrok
     """
     global _execution_thread, _stop_signal
 
     if request.method == 'POST':
         try:
-            # Verificar si hay thread ejecutándose
             if _execution_thread and _execution_thread.is_alive():
                 return JsonResponse({
                     "success": False,
@@ -1674,7 +1652,7 @@ def execute_view(request):
             code = data.get('code', '')
             rover_ip = data.get('rover_ip', '192.168.1.98')
 
-            print(f"🚀 Iniciando ejecución EN THREAD para rover {rover_ip}")
+            print(f"🚀 Iniciando ejecución para rover {rover_ip}")
 
             from .umg_transpiler import UMGTranspiler
             transpiler = UMGTranspiler()
@@ -1684,35 +1662,60 @@ def execute_view(request):
             if isinstance(commands, dict) and "error" in commands:
                 return JsonResponse(commands)
 
-            print(f"📋 {len(commands)} comandos compilados para thread")
+            print(f"📋 {len(commands)} comandos compilados")
+
+            # DIVIDIR EN CHUNKS para evitar timeout de ngrok
+            chunk_size = 20  # Ejecutar máximo 20 comandos por chunk
+            chunks = [commands[i:i + chunk_size] for i in range(0, len(commands), chunk_size)]
+            
+            print(f"📦 Dividido en {len(chunks)} chunks de máximo {chunk_size} comandos")
 
             # LIMPIAR SEÑAL DE PARADA
             _stop_signal.clear()
 
+            # Función para ejecutar chunks
+            def execute_chunks():
+                global _stop_signal
+                from .rover_communication import RoverCommunicator
+                rover_comm = RoverCommunicator(rover_ip)
+                
+                for chunk_num, chunk in enumerate(chunks):
+                    if _stop_signal.is_set():
+                        print(f"🛑 Ejecución cancelada en chunk {chunk_num + 1}")
+                        break
+                    
+                    print(f"📦 Ejecutando chunk {chunk_num + 1}/{len(chunks)}")
+                    
+                    # Ejecutar comandos del chunk
+                    for i, (cmd, duration) in enumerate(chunk):
+                        if _stop_signal.is_set():
+                            rover_comm.send_command('S', 0)
+                            return
+                        
+                        rover_comm.send_command(cmd, duration)
+                        
+                        # Espera mínima entre comandos
+                        time.sleep(0.005)  # 5ms
+                    
+                    # Pequeña pausa entre chunks
+                    if chunk_num < len(chunks) - 1:
+                        time.sleep(0.1)  # 100ms entre chunks
+
             # CREAR Y LANZAR THREAD
             _execution_thread = threading.Thread(
-                target=_execute_commands_in_thread,
-                args=(commands, rover_ip),
+                target=execute_chunks,
                 daemon=True,
                 name="RoverExecutionThread"
             )
             
             _execution_thread.start()
-            print("🚀 Thread lanzado")
-
-            # ESPERAR A QUE TERMINE EL THREAD
-            _execution_thread.join()
             
-            print("✅ Thread finalizado")
-
-            # Limpiar
-            _execution_thread = None
-            _stop_signal.clear()
-
+            # NO ESPERAR - Responder inmediatamente
             return JsonResponse({
                 "success": True,
-                "message": "Ejecución completada en thread",
-                "commands_total": len(commands)
+                "message": "Ejecución iniciada",
+                "commands_total": len(commands),
+                "chunks": len(chunks)
             })
 
         except Exception as e:

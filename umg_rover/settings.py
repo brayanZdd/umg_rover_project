@@ -200,9 +200,13 @@ LOGGING = {
         },
     },
 }
+# Timeouts para requests
+REQUEST_TIMEOUT = 30  # segundos
+
+# Para ngrok
+NGROK_TIMEOUT = 0.5  # segundos por comando
 
 # ===== CONFIGURACIÓN PARA RENDER =====
-# Agregar esto AL FINAL de settings.py
 
 import os
 

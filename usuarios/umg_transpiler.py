@@ -13,6 +13,8 @@ class UMGTranspiler:
             'girar', 'circulo', 'cuadrado', 'rotar',
             'caminar', 'moonwalk'
         ]
+        
+        self.command_delay = 0.01  # 10ms en lugar de 200ms
 
     def _avanzar_vlts(self, n):
         if n == 0:
@@ -160,7 +162,6 @@ class UMGTranspiler:
             logger.error(f"Error al parsear código UMG++: {str(e)}")
             return {"error": f"Error al parsear: {str(e)}"}
 
-
     def _parse_instruction(self, instr):
         match = re.match(r'(\w+)\s*\(\s*(-?\d+)\s*\)', instr)
         if not match:
@@ -187,6 +188,9 @@ class UMGTranspiler:
         return functions[func_name](param)
 
     def execute_commands(self, commands, rover_communicator):
+        """
+        VERSIÓN OPTIMIZADA - Sin delays innecesarios
+        """
         if isinstance(commands, dict) and "error" in commands:
             return commands
 
@@ -195,18 +199,20 @@ class UMGTranspiler:
         try:
             for cmd_data in commands:
                 cmd, duration = cmd_data
+                
+                # Enviar comando SIN esperar respuesta completa
                 result = rover_communicator.send_command(cmd, duration)
                 results.append(result)
 
                 if not result["success"]:
                     return {"error": f"Error al ejecutar comando {cmd}", "results": results}
 
-                time.sleep(duration / 1000.0)
-                time.sleep(0.2)
+                # Solo un pequeño delay para no saturar el ESP8266
+                # NO esperar la duración completa - el rover maneja los tiempos
+                time.sleep(self.command_delay)  # Usar el delay configurado (10ms)
 
             return {"success": True, "results": results}
 
         except Exception as e:
             logger.error(f"Error al ejecutar comandos: {str(e)}")
             return {"error": f"Error al ejecutar comandos: {str(e)}", "results": results}
-        

@@ -37871,3 +37871,149 @@ INFO 2025-05-29 03:06:16,472 basehttp "GET / HTTP/1.1" 200 20124
 INFO 2025-05-29 03:06:16,472 basehttp "GET / HTTP/1.1" 200 20124
 INFO 2025-05-29 18:01:26,763 autoreload Watching for file changes with StatReloader
 INFO 2025-05-29 18:01:26,763 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 01:41:21,259 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 01:41:21,259 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 01:41:31,691 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:41:31,691 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:41:31,773 basehttp "GET /static/img/minecraft_background.jpg HTTP/1.1" 304 0
+INFO 2025-05-30 01:41:31,773 basehttp "GET /static/img/minecraft_background.jpg HTTP/1.1" 304 0
+WARNING 2025-05-30 01:41:32,018 log Not Found: /favicon.ico
+WARNING 2025-05-30 01:41:32,018 log Not Found: /favicon.ico
+WARNING 2025-05-30 01:41:32,019 basehttp "GET /favicon.ico HTTP/1.1" 404 7450
+WARNING 2025-05-30 01:41:32,019 basehttp "GET /favicon.ico HTTP/1.1" 404 7450
+INFO 2025-05-30 01:41:39,062 services Ingreso registrado con ID: 654
+INFO 2025-05-30 01:41:39,063 views Sesión iniciada: usuario_id=428, ingreso_id=654
+INFO 2025-05-30 01:41:39,077 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:41:39,077 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:41:39,962 basehttp "GET /editor/ HTTP/1.1" 200 740933
+INFO 2025-05-30 01:41:39,962 basehttp "GET /editor/ HTTP/1.1" 200 740933
+INFO 2025-05-30 01:41:45,329 views Cerrando sesión para usuario_id: 428, ingreso_id: 654
+INFO 2025-05-30 01:41:45,329 services Registrando salida para ingreso ID: 654
+INFO 2025-05-30 01:41:45,889 services Resultado del SP registrar_salida: 
+INFO 2025-05-30 01:41:45,890 views Resultado de registrar_salida: Salida registrada exitosamente
+INFO 2025-05-30 01:41:45,913 views Sesión cerrada correctamente
+INFO 2025-05-30 01:41:45,913 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:41:45,913 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:41:45,919 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:41:45,919 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:41:47,587 basehttp "GET /registro/ HTTP/1.1" 200 36089
+INFO 2025-05-30 01:41:47,587 basehttp "GET /registro/ HTTP/1.1" 200 36089
+INFO 2025-05-30 01:42:12,905 views ==================================================
+INFO 2025-05-30 01:42:12,905 views INICIO DEL PROCESO DE REGISTRO
+INFO 2025-05-30 01:42:12,906 views Nombre: Brayan, Nickname: Xvidoes, Correo: juegoopes@gmail.com
+INFO 2025-05-30 01:42:13,151 views Avatar predeterminado generado para nickname: Xvidoes
+INFO 2025-05-30 01:42:13,244 views Llamando a services.registro_usuario...
+INFO 2025-05-30 01:42:13,244 views Parámetros: nombre=Brayan, nickname=Xvidoes, correo=juegoopes@gmail.com, telefono=38184787
+INFO 2025-05-30 01:42:13,244 views Avatar data length: 17772
+INFO 2025-05-30 01:42:14,152 views Resultado del registro: 'Ha sido registrado exitosamente' (tipo: <class 'str'>)
+INFO 2025-05-30 01:42:14,202 views ID del usuario creado: 532
+INFO 2025-05-30 01:42:14,202 views Iniciando generación de PDF...
+INFO 2025-05-30 01:42:14,342 views Resultado de obtener_o_generar_pdf: C:\Users\braya\OneDrive\Documentos\umg_rover_project\media\credenciales\credencial_532.pdf
+INFO 2025-05-30 01:42:14,342 views PDF generado correctamente: C:\Users\braya\OneDrive\Documentos\umg_rover_project\media\credenciales\credencial_532.pdf
+INFO 2025-05-30 01:42:14,342 views Tamaño del PDF: 560391 bytes
+INFO 2025-05-30 01:42:14,342 views Iniciando envío de correo...
+INFO 2025-05-30 01:42:16,342 views ==================================================
+INFO 2025-05-30 01:42:16,342 views FIN DEL PROCESO DE REGISTRO: EXITOSO
+INFO 2025-05-30 01:42:16,342 views ==================================================
+INFO 2025-05-30 01:42:16,360 basehttp "POST /registro/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:42:16,360 basehttp "POST /registro/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:42:16,392 basehttp "GET / HTTP/1.1" 200 20863
+INFO 2025-05-30 01:42:16,392 basehttp "GET / HTTP/1.1" 200 20863
+INFO 2025-05-30 01:44:10,285 services Ingreso registrado con ID: 655
+INFO 2025-05-30 01:44:10,286 views Sesión iniciada: usuario_id=476, ingreso_id=655
+INFO 2025-05-30 01:44:10,315 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:44:10,315 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:44:10,954 basehttp "GET /editor/ HTTP/1.1" 200 206071
+INFO 2025-05-30 01:44:10,954 basehttp "GET /editor/ HTTP/1.1" 200 206071
+INFO 2025-05-30 01:45:02,061 basehttp "GET /editor/ HTTP/1.1" 200 205720
+INFO 2025-05-30 01:45:02,061 basehttp "GET /editor/ HTTP/1.1" 200 205720
+INFO 2025-05-30 01:45:16,331 basehttp "GET /editor/ HTTP/1.1" 200 205708
+INFO 2025-05-30 01:45:16,331 basehttp "GET /editor/ HTTP/1.1" 200 205708
+INFO 2025-05-30 01:45:45,426 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:45:45,426 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:45:45,461 basehttp "POST /api/simulate/ HTTP/1.1" 200 613
+INFO 2025-05-30 01:45:45,461 basehttp "POST /api/simulate/ HTTP/1.1" 200 613
+INFO 2025-05-30 01:45:56,361 basehttp "GET /test-rover/ HTTP/1.1" 200 103755
+INFO 2025-05-30 01:45:56,361 basehttp "GET /test-rover/ HTTP/1.1" 200 103755
+INFO 2025-05-30 01:47:07,087 basehttp "GET /test-rover/ HTTP/1.1" 200 103748
+INFO 2025-05-30 01:47:07,087 basehttp "GET /test-rover/ HTTP/1.1" 200 103748
+INFO 2025-05-30 01:47:39,590 basehttp "GET /test-rover/ HTTP/1.1" 200 103749
+INFO 2025-05-30 01:47:39,590 basehttp "GET /test-rover/ HTTP/1.1" 200 103749
+INFO 2025-05-30 01:47:45,160 basehttp "GET /editor/ HTTP/1.1" 200 205708
+INFO 2025-05-30 01:47:45,160 basehttp "GET /editor/ HTTP/1.1" 200 205708
+INFO 2025-05-30 01:47:47,035 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:47:47,035 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:47:50,404 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:47:50,404 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:47:50,410 rover_communication Inicializado RoverCommunicator con IP: 192.168.1.89
+INFO 2025-05-30 01:47:50,410 rover_communication Probando conexión con rover en: http://192.168.1.89/status
+WARNING 2025-05-30 01:47:51,420 rover_communication Error al conectar con API nueva: HTTPConnectionPool(host='192.168.1.89', port=80): Max retries exceeded with url: /status (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000021CF4168250>, 'Connection to 192.168.1.89 timed out. (connect timeout=1)'))
+INFO 2025-05-30 01:47:51,420 rover_communication Probando conexión con rover (API antigua) en: http://192.168.1.89/
+ERROR 2025-05-30 01:47:52,433 rover_communication Error al conectar con API antigua: HTTPConnectionPool(host='192.168.1.89', port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000021CF4654790>, 'Connection to 192.168.1.89 timed out. (connect timeout=1)'))
+INFO 2025-05-30 01:47:52,455 basehttp "POST /api/execute/ HTTP/1.1" 200 81
+INFO 2025-05-30 01:47:52,455 basehttp "POST /api/execute/ HTTP/1.1" 200 81
+INFO 2025-05-30 01:50:15,259 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\usuarios\views.py changed, reloading.
+INFO 2025-05-30 01:50:15,259 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\usuarios\views.py changed, reloading.
+INFO 2025-05-30 01:50:16,108 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 01:50:16,108 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 01:50:18,155 basehttp "GET /editor/ HTTP/1.1" 200 205703
+INFO 2025-05-30 01:50:18,155 basehttp "GET /editor/ HTTP/1.1" 200 205703
+INFO 2025-05-30 01:50:34,660 views Cerrando sesión para usuario_id: 476, ingreso_id: 655
+INFO 2025-05-30 01:50:34,660 services Registrando salida para ingreso ID: 655
+INFO 2025-05-30 01:50:35,208 services Resultado del SP registrar_salida: 
+INFO 2025-05-30 01:50:35,208 views Resultado de registrar_salida: Salida registrada exitosamente
+INFO 2025-05-30 01:50:35,231 views Sesión cerrada correctamente
+INFO 2025-05-30 01:50:35,232 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:50:35,232 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:50:35,243 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:50:35,243 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:50:40,982 services Ingreso registrado con ID: 657
+INFO 2025-05-30 01:50:40,982 views Sesión iniciada: usuario_id=478, ingreso_id=657
+INFO 2025-05-30 01:50:41,005 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:50:41,005 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 01:50:48,488 basehttp "GET /dashboard/ HTTP/1.1" 200 9978749
+INFO 2025-05-30 01:50:48,488 basehttp "GET /dashboard/ HTTP/1.1" 200 9978749
+INFO 2025-05-30 01:52:06,500 basehttp "GET /dashboard/ HTTP/1.1" 200 9978398
+INFO 2025-05-30 01:52:06,500 basehttp "GET /dashboard/ HTTP/1.1" 200 9978398
+INFO 2025-05-30 01:53:14,889 basehttp "GET /dashboard/ HTTP/1.1" 200 10109716
+INFO 2025-05-30 01:53:14,889 basehttp "GET /dashboard/ HTTP/1.1" 200 10109716
+INFO 2025-05-30 01:54:21,515 basehttp "GET /dashboard/ HTTP/1.1" 200 10109733
+INFO 2025-05-30 01:54:21,515 basehttp "GET /dashboard/ HTTP/1.1" 200 10109733
+INFO 2025-05-30 01:55:38,545 basehttp "GET /dashboard/ HTTP/1.1" 200 10109743
+INFO 2025-05-30 01:55:38,545 basehttp "GET /dashboard/ HTTP/1.1" 200 10109743
+INFO 2025-05-30 01:56:27,112 basehttp "GET /dashboard/ HTTP/1.1" 200 9978450
+INFO 2025-05-30 01:56:27,112 basehttp "GET /dashboard/ HTTP/1.1" 200 9978450
+INFO 2025-05-30 01:56:44,850 basehttp "GET /dashboard/ HTTP/1.1" 200 9978431
+INFO 2025-05-30 01:56:44,850 basehttp "GET /dashboard/ HTTP/1.1" 200 9978431
+INFO 2025-05-30 01:57:11,898 basehttp "GET /dashboard/ HTTP/1.1" 200 9978447
+INFO 2025-05-30 01:57:11,898 basehttp "GET /dashboard/ HTTP/1.1" 200 9978447
+INFO 2025-05-30 01:58:00,057 basehttp "GET /test-rover/ HTTP/1.1" 200 30970
+INFO 2025-05-30 01:58:00,057 basehttp "GET /test-rover/ HTTP/1.1" 200 30970
+INFO 2025-05-30 01:58:01,749 basehttp "GET /editor/ HTTP/1.1" 200 132924
+INFO 2025-05-30 01:58:01,749 basehttp "GET /editor/ HTTP/1.1" 200 132924
+INFO 2025-05-30 01:58:33,032 basehttp "GET /test-rover/ HTTP/1.1" 200 30970
+INFO 2025-05-30 01:58:33,032 basehttp "GET /test-rover/ HTTP/1.1" 200 30970
+INFO 2025-05-30 01:58:53,137 basehttp "GET /editor/ HTTP/1.1" 200 132924
+INFO 2025-05-30 01:58:53,137 basehttp "GET /editor/ HTTP/1.1" 200 132924
+INFO 2025-05-30 01:58:56,680 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:58:56,680 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:58:56,704 basehttp "POST /api/simulate/ HTTP/1.1" 200 613
+INFO 2025-05-30 01:58:56,704 basehttp "POST /api/simulate/ HTTP/1.1" 200 613
+INFO 2025-05-30 01:59:06,226 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:59:06,226 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 01:59:06,232 rover_communication Inicializado RoverCommunicator con IP: 192.168.1.89
+INFO 2025-05-30 01:59:06,234 rover_communication Probando conexión con rover en: http://192.168.1.89/status
+WARNING 2025-05-30 01:59:07,247 rover_communication Error al conectar con API nueva: HTTPConnectionPool(host='192.168.1.89', port=80): Max retries exceeded with url: /status (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000239794B4350>, 'Connection to 192.168.1.89 timed out. (connect timeout=1)'))
+INFO 2025-05-30 01:59:07,247 rover_communication Probando conexión con rover (API antigua) en: http://192.168.1.89/
+ERROR 2025-05-30 01:59:08,256 rover_communication Error al conectar con API antigua: HTTPConnectionPool(host='192.168.1.89', port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000023979670D10>, 'Connection to 192.168.1.89 timed out. (connect timeout=1)'))
+INFO 2025-05-30 01:59:08,282 basehttp "POST /api/execute/ HTTP/1.1" 200 81
+INFO 2025-05-30 01:59:08,282 basehttp "POST /api/execute/ HTTP/1.1" 200 81
+INFO 2025-05-30 01:59:15,721 views Cerrando sesión para usuario_id: 478, ingreso_id: 657
+INFO 2025-05-30 01:59:15,721 services Registrando salida para ingreso ID: 657
+INFO 2025-05-30 01:59:16,272 services Resultado del SP registrar_salida: 
+INFO 2025-05-30 01:59:16,272 views Resultado de registrar_salida: Salida registrada exitosamente
+INFO 2025-05-30 01:59:16,295 views Sesión cerrada correctamente
+INFO 2025-05-30 01:59:16,295 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:59:16,295 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 01:59:16,307 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 01:59:16,307 basehttp "GET / HTTP/1.1" 200 20124

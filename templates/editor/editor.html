@@ -1908,7 +1908,7 @@ END.
             compileBtn.disabled = false;
             hideSimulator();
 
-            const roverIp = roverIpInput.value.trim() || '192.168.1.98';
+            const roverIp = roverIpInput.value.trim() || '';
 
             // Solo un mensaje en consola
             logToConsole("🛑 STOP - Deteniendo rover...");
@@ -2537,12 +2537,20 @@ END.
             }
         }
 
+        // Reemplaza la función executeCode en editor.html con esta versión:
+
         async function executeCode() {
             try {
                 const commands = await compileCode();
                 if (!commands) return;
 
-                const roverIp = roverIpInput.value.trim() || '192.168.1.89';
+                const roverIp = roverIpInput.value.trim();
+
+                // Validar que sea una URL de ngrok si contiene "ngrok"
+                if (roverIp.includes('ngrok') && !roverIp.startsWith('http')) {
+                    logToConsole('⚠️ URL de ngrok debe incluir https://');
+                    return;
+                }
 
                 isExecuting = true;
                 executionAborted = false;
@@ -2552,17 +2560,18 @@ END.
                 emergencyStopBtn.style.display = 'inline-block';
                 executeBtn.disabled = true;
                 simulateBtn.disabled = true;
+                compileBtn.disabled = true;
 
-                logToConsole(' Ejecutando en el rover (IP: ' + roverIp + ')...');
-                addToBitacora('Ejecución', '🚀 Rover Real', 'Conectando con rover en ' + roverIp, 'simulation');
+                logToConsole('Ejecutando en el rover...');
+                addToBitacora('Ejecución', '🚀 Rover Real', 'Enviando comandos a ' + roverIp, 'simulation');
 
-                parseAndLogRoverMovements(codeEditor.value);
-
+                // Si hay música, reproducirla
                 if (currentCoreografia && audioElement.src) {
                     playAudio();
                     addToBitacora('Audio', '🎵 Música', 'Reproduciendo: ' + currentCoreografia, 'success');
                 }
 
+                // Enviar a ejecutar SIN ESPERAR respuesta larga
                 const response = await fetch('/api/execute/', {
                     method: 'POST',
                     headers: {
@@ -2578,31 +2587,70 @@ END.
 
                 const data = await response.json();
 
-                if (data.success && !executionAborted) {
-                    logToConsole("✅ Ejecución completada exitosamente");
-                    addToBitacora('Ejecución', '✅ Completada', 'Rover ejecutó todos los comandos exitosamente', 'success');
-                } else if (data.cancelled || executionAborted) {
-                    logToConsole("Ejecución cancelada por Stop");
-                    addToBitacora('Ejecución', '🛑 Cancelada', 'Ejecución cancelada por parada de emergencia', 'error');
+                if (data.success) {
+                    logToConsole("✅ Ejecución iniciada");
+                    logToConsole(`📦 ${data.commands_total} comandos en ${data.chunks || 1} chunks`);
+
+                    // Monitorear el estado periódicamente
+                    monitorExecution();
                 } else {
                     logToConsole("❌ Error: " + data.message);
-                    addToBitacora('Error', '❌ Ejecución', 'Error en rover: ' + data.message, 'error');
+                    addToBitacora('Error', '❌ Ejecución', 'Error: ' + data.message, 'error');
+                    resetExecutionState();
                 }
+
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    logToConsole("Ejecución cancelada por Stop");
-                    addToBitacora('Ejecución', '🛑 Cancelada', 'Stop', 'error');
-                } else if (!executionAborted) {
-                    logToConsole("❌ Error de ejecución: " + error.message);
-                    addToBitacora('Error', '❌ Conexión', 'Error de conexión con rover: ' + error.message, 'error');
+                    logToConsole("🛑 Ejecución cancelada");
+                } else {
+                    logToConsole("❌ Error: " + error.message);
                 }
-            } finally {
-                isExecuting = false;
-                currentExecutionController = null;
-                emergencyStopBtn.style.display = 'none';
-                executeBtn.disabled = false;
-                simulateBtn.disabled = false;
+                resetExecutionState();
             }
+        }
+
+        function monitorExecution() {
+            // Verificar estado cada 2 segundos
+            const checkInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/status/');
+                    const data = await response.json();
+
+                    if (!data.execution_active || executionAborted) {
+                        clearInterval(checkInterval);
+
+                        if (executionAborted) {
+                            logToConsole("🛑 Ejecución detenida por E-Stop");
+                            addToBitacora('Ejecución', '🛑 Detenida', 'Parada de emergencia activada', 'error');
+                        } else {
+                            logToConsole("✅ Ejecución completada");
+                            addToBitacora('Ejecución', '✅ Completada', 'Todos los comandos ejecutados', 'success');
+                        }
+
+                        resetExecutionState();
+                    }
+                } catch (error) {
+                    // Ignorar errores de monitoreo
+                }
+            }, 2000);
+
+            // Timeout de seguridad - 5 minutos máximo
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                if (isExecuting) {
+                    logToConsole("⚠️ Timeout de ejecución");
+                    resetExecutionState();
+                }
+            }, 300000);
+        }
+
+        function resetExecutionState() {
+            isExecuting = false;
+            currentExecutionController = null;
+            emergencyStopBtn.style.display = 'none';
+            executeBtn.disabled = false;
+            simulateBtn.disabled = false;
+            compileBtn.disabled = false;
         }
 
         function clearConsole() {
@@ -2706,7 +2754,7 @@ END.
         });
 
         if (roverIpInput && !roverIpInput.value) {
-            roverIpInput.value = '192.168.1.89';
+            roverIpInput.value = '';
         }
     });
 </script>
