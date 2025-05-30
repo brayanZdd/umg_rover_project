@@ -200,3 +200,43 @@ LOGGING = {
         },
     },
 }
+
+# ===== CONFIGURACIÓN PARA RENDER CON MYSQL =====
+# Agregar esto AL FINAL de settings.py
+
+import os
+
+# Secret Key para producción
+SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
+
+# Configuración de ALLOWED_HOSTS para Render
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# IMPORTANTE: Agregar dominios de Render
+ALLOWED_HOSTS.extend([
+    'umg-rover-project.onrender.com',
+    '.onrender.com',
+    'localhost',
+    '127.0.0.1',
+])
+
+# Debug en False para producción
+if 'RENDER' in os.environ:
+    DEBUG = False
+    # Usar MySQL en producción
+    DATABASES['default'] = DATABASES['mysql']
+    
+# Whitenoise para servir archivos estáticos
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+# Configuración de archivos estáticos para producción
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Configuración de CORS para producción
+CORS_ALLOWED_ORIGINS = [
+    "https://*.onrender.com",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
