@@ -34,7 +34,7 @@ class UMGTranspiler:
         result = []
         pasos = abs(n)
         
-        # Para cada paso del moonwalk
+        # Para cada paso del moonwalk mikel
         for i in range(pasos):
             # Usar los comandos de giro diagonal hacia atrás
             # H = BackwardLeft (ruedas derechas principalmente)

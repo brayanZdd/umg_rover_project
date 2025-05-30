@@ -39,6 +39,7 @@ def enviar_credencial_email(nombre, correo, pdf_path, nickname, usuario_id):
             logging.error(f"El archivo PDF no existe en {pdf_path}")
             return False
 
+
         # Verificar tamaño del PDF
         filesize = os.path.getsize(pdf_path)
         logging.debug(f"Tamaño del archivo PDF: {filesize} bytes")
