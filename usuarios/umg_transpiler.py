@@ -205,7 +205,7 @@ class UMGTranspiler:
                     return {"error": f"Error al ejecutar comando {cmd}", "results": results}
 
                 # Esperar la duración del comando para que se complete
-                time.sleep(duration / 1500.0)
+                time.sleep(duration / 1000.0)
                 
                 # Delay mínimo entre comandos (5ms)
                 time.sleep(0.002)
