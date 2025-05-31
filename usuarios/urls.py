@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/execute/', views.execute_view, name='execute'),
     path('api/simulate/', views.simulate_view, name='simulate'),
     path('api/status/', views.status_view, name='api_status'),
+    path('api/execution-status/', views.execution_status_view, name='execution_status'),
     
     # Rutas de prueba y debug
     path('debug/', views.debug_view, name='debug'),

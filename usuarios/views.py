@@ -1569,7 +1569,7 @@ def emergency_stop_view(request):
 
 def _execute_commands_in_thread(commands, rover_ip):
     """
-    Ejecuta comandos respetando sus duraciones pero verificando stop frecuentemente
+    Thread mejorado con pausas preventivas para ESP8266
     """
     global _stop_signal
     
@@ -1580,54 +1580,66 @@ def _execute_commands_in_thread(commands, rover_ip):
         total_commands = len(commands)
         print(f"🚀 Thread ejecutando {total_commands} comandos")
         
+        command_count = 0
+        
         for i, cmd_data in enumerate(commands):
-            # Verificar STOP antes de cada comando
+            # Verificar STOP
             if _stop_signal.is_set():
                 print(f"💀 STOP detectado en comando {i+1}/{total_commands}")
                 rover_comm.send_command('S', 0)
-                print(f"🗑️ Thread terminado. Descartados {total_commands - i} comandos")
                 return
             
             try:
                 cmd, duration = cmd_data
+                command_count += 1
                 
-                print(f"📡 Ejecutando comando {i+1}/{total_commands}: {cmd} por {duration}ms")
+                print(f"📡 Comando {i+1}/{total_commands}: {cmd} por {duration}ms")
                 
                 # Enviar comando
                 result = rover_comm.send_command(cmd, duration)
                 
-                # IMPORTANTE: Esperar la duración del comando
-                # Pero dividir en chunks pequeños para verificar stop signal
+                # Esperar duración con verificación de stop
                 elapsed = 0
-                check_interval = 50  # Verificar cada 50ms
+                check_interval = 50
                 
-                while elapsed < duration:
-                    # Si hay señal de stop, salir inmediatamente
-                    if _stop_signal.is_set():
-                        print(f"💀 STOP detectado durante comando {i+1}")
-                        rover_comm.send_command('S', 0)
-                        return
-                    
-                    # Esperar el mínimo entre check_interval y el tiempo restante
+                while elapsed < duration and not _stop_signal.is_set():
                     wait_time = min(check_interval, duration - elapsed)
-                    time.sleep(wait_time / 1000.0)  # Convertir a segundos
+                    time.sleep(wait_time / 1000.0)
                     elapsed += wait_time
                 
-                # Delay mínimo entre comandos (5ms)
-                time.sleep(0.005)
+                if _stop_signal.is_set():
+                    rover_comm.send_command('S', 0)
+                    return
+                
+                # Delays preventivos para no saturar ESP8266
+                if command_count % 15 == 0:
+                    print(f"⏸️ Pausa preventiva en comando {command_count}")
+                    time.sleep(0.2)  # 200ms cada 15 comandos
+                    
+                    # Yield para que Python procese otros threads
+                    time.sleep(0.001)
+                else:
+                    time.sleep(0.01)  # 10ms normal
+                
+                # Cada 40 comandos, pausa más larga
+                if command_count % 40 == 0:
+                    print(f"⏸️ Pausa larga en comando {command_count}")
+                    time.sleep(0.5)
+                    
+                    # Opcional: Enviar un comando dummy para mantener conexión
+                    rover_comm.send_command('S', 10)  # Stop de 10ms
                 
             except Exception as cmd_error:
                 print(f"❌ Error en comando {i+1}: {str(cmd_error)}")
+                # Continuar con siguiente comando
                 continue
         
-        print(f"✅ Thread completado: {total_commands} comandos ejecutados")
+        print(f"✅ Thread completado: {total_commands} comandos")
         
     except Exception as e:
         print(f"❌ Error crítico en thread: {str(e)}")
         if _stop_signal.is_set():
             try:
-                from .rover_communication import RoverCommunicator
-                rover_comm = RoverCommunicator(rover_ip)
                 rover_comm.send_command('S', 0)
             except:
                 pass
