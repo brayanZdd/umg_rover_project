@@ -39135,3 +39135,47 @@ INFO 2025-05-30 19:47:22,026 basehttp "GET /logout/ HTTP/1.1" 302 0
 INFO 2025-05-30 19:47:22,026 basehttp "GET /logout/ HTTP/1.1" 302 0
 INFO 2025-05-30 19:47:22,047 basehttp "GET / HTTP/1.1" 200 20124
 INFO 2025-05-30 19:47:22,047 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 20:28:29,200 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:28:29,200 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:29:54,019 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\umg_rover\settings.py changed, reloading.
+INFO 2025-05-30 20:29:54,019 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\umg_rover\settings.py changed, reloading.
+INFO 2025-05-30 20:29:54,683 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:29:54,683 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:29:56,051 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\umg_rover\settings.py changed, reloading.
+INFO 2025-05-30 20:29:56,051 autoreload C:\Users\braya\OneDrive\Documentos\umg_rover_project\umg_rover\settings.py changed, reloading.
+INFO 2025-05-30 20:29:56,891 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:29:56,891 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:30:08,992 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:30:08,992 autoreload Watching for file changes with StatReloader
+INFO 2025-05-30 20:30:10,833 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 20:30:10,833 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 20:30:14,311 services Ingreso registrado con ID: 704
+INFO 2025-05-30 20:30:14,312 views Sesión iniciada: usuario_id=476, ingreso_id=704
+INFO 2025-05-30 20:30:14,330 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 20:30:14,330 basehttp "POST / HTTP/1.1" 302 0
+INFO 2025-05-30 20:30:14,766 basehttp "GET /editor/ HTTP/1.1" 200 206483
+INFO 2025-05-30 20:30:14,766 basehttp "GET /editor/ HTTP/1.1" 200 206483
+INFO 2025-05-30 20:30:24,520 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 20:30:24,520 basehttp "POST /api/compile/ HTTP/1.1" 200 310
+INFO 2025-05-30 20:30:24,545 rover_communication Inicializado RoverCommunicator con IP: https://f2247cc0aa05.ngrok.app/
+INFO 2025-05-30 20:30:24,546 rover_communication Probando conexión con rover en: https://f2247cc0aa05.ngrok.app/status
+INFO 2025-05-30 20:30:26,009 rover_communication Conexión exitosa (API nueva)
+INFO 2025-05-30 20:30:26,010 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=F&duration=2960
+INFO 2025-05-30 20:30:29,186 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=R&duration=500
+INFO 2025-05-30 20:30:30,843 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=F&duration=1500
+INFO 2025-05-30 20:30:33,516 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=L&duration=500
+INFO 2025-05-30 20:30:35,036 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=F&duration=1500
+INFO 2025-05-30 20:30:37,646 rover_communication Enviando comando: https://f2247cc0aa05.ngrok.app/command?cmd=I&duration=2000
+INFO 2025-05-30 20:30:40,741 basehttp - Broken pipe from ('127.0.0.1', 64658)
+
+INFO 2025-05-30 20:30:40,741 basehttp - Broken pipe from ('127.0.0.1', 64658)
+
+INFO 2025-05-30 20:30:46,107 views Cerrando sesión para usuario_id: 476, ingreso_id: 704
+INFO 2025-05-30 20:30:46,108 services Registrando salida para ingreso ID: 704
+INFO 2025-05-30 20:30:46,707 services Resultado del SP registrar_salida: 
+INFO 2025-05-30 20:30:46,707 views Resultado de registrar_salida: Salida registrada exitosamente
+INFO 2025-05-30 20:30:46,729 views Sesión cerrada correctamente
+INFO 2025-05-30 20:30:46,730 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 20:30:46,730 basehttp "GET /logout/ HTTP/1.1" 302 0
+INFO 2025-05-30 20:30:46,736 basehttp "GET / HTTP/1.1" 200 20124
+INFO 2025-05-30 20:30:46,736 basehttp "GET / HTTP/1.1" 200 20124
