@@ -23,27 +23,31 @@ class UMGTranspiler:
         return [(cmd, abs(n) * 565)]
 
     def _moonwalk(self, n):
-
+        """
+        Simula el moonwalk usando rotaciones cortas hacia atrás
+        Alterna entre rotar hacia atrás por la izquierda y por la derecha
+        Esto simula el movimiento de moonwalk donde las ruedas se mueven alternadamente
+        """
         if n == 0:
             raise ValueError("El parámetro de moonwalk no puede ser 0")
         
         result = []
         pasos = abs(n)
         
-        # Moonwalk usando comandos existentes
+        # Para cada paso del moonwalk mikel
         for i in range(pasos):
-            # Pequeño movimiento hacia atrás
-            result.append(('B', 200))  # Atrás 200ms
-            result.append(('S', 20))   # Pausa
+            # Usar los comandos de giro diagonal hacia atrás
+            # H = BackwardLeft (ruedas derechas principalmente)
+            # J = BackwardRight (ruedas izquierdas principalmente)
             
-            # Giro suave izquierda-derecha para efecto moonwalk
-            result.append(('L', 100))  # Izquierda 100ms
-            result.append(('R', 100))  # Derecha 100ms
+            # Paso 1: Mover principalmente lado derecho hacia atrás
+            result.append(('H', 500))  # BackwardLeft
+            result.append(('S', 30))  # Pausa corta
             
-            # Otro pequeño movimiento atrás
-            result.append(('B', 200))  # Atrás 200ms
-        result.append(('S', 20))   # Pausa
-    
+            # Paso 2: Mover principalmente lado izquierdo hacia atrás
+            result.append(('J', 500))  # BackwardRight
+            result.append(('S', 30))  # Pausa corta
+        
         return result
 
     def _avanzar_ctms(self, n):
@@ -85,9 +89,9 @@ class UMGTranspiler:
             raise ValueError("El lado del cuadrado debe estar entre 10 y 200 cm")
         duration = n * 50
         return [
-            ('F', duration), ('R', 800),
-            ('F', duration), ('R', 800),
-            ('F', duration), ('R', 800),
+            ('F', duration), ('R', 600),
+            ('F', duration), ('R', 600),
+            ('F', duration), ('R', 600),
             ('F', duration), ('S', 100)
         ]
 
@@ -188,12 +192,10 @@ class UMGTranspiler:
             return commands
 
         results = []
-        command_count = 0
 
         try:
             for cmd_data in commands:
                 cmd, duration = cmd_data
-                command_count += 1
                 
                 # Enviar comando
                 result = rover_communicator.send_command(cmd, duration)
@@ -202,20 +204,11 @@ class UMGTranspiler:
                 if not result["success"]:
                     return {"error": f"Error al ejecutar comando {cmd}", "results": results}
 
-                # Esperar la duración del comando
-                time.sleep(duration / 1000.0)
+                # Esperar la duración del comando para que se complete
+                time.sleep(duration / 1500.0)
                 
-                # Delay entre comandos basado en el número de comandos ejecutados
-                # Más delay cada 20 comandos para dar respiro al ESP8266
-                if command_count % 20 == 0:
-                    time.sleep(0.1)  # 100ms cada 20 comandos
-                else:
-                    time.sleep(0.01)  # 10ms normalmente
-                
-                # Cada 50 comandos, pausa más larga
-                if command_count % 50 == 0:
-                    print(f"Pausa preventiva en comando {command_count}")
-                    time.sleep(0.5)  # 500ms cada 50 comandos
+                # Delay mínimo entre comandos (5ms)
+                time.sleep(0.002)
 
             return {"success": True, "results": results}
 

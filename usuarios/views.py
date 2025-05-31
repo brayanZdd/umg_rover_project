@@ -1684,7 +1684,7 @@ def execute_view(request):
             _execution_thread = threading.Thread(
                 target=_execute_commands_in_thread,
                 args=(commands, rover_ip),
-                daemon=True,
+                daemon=False,
                 name="RoverExecutionThread"
             )
             
@@ -1833,19 +1833,17 @@ def status_view(request):
     })
 # Agrega esta vista en views.py si no la tienes:
 
+@csrf_exempt
 def execution_status_view(request):
     """
     Vista para verificar el estado de la ejecución actual
     """
     global _execution_thread, _stop_signal
-    
+
     is_running = _execution_thread is not None and _execution_thread.is_alive()
-    
+
     return JsonResponse({
         "success": True,
         "is_running": is_running,
         "stop_requested": _stop_signal.is_set() if _stop_signal else False
     })
-
-# Y agrega en urls.py:
-# 
