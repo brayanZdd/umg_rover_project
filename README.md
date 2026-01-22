@@ -61,4 +61,16 @@ Para permitir el control del rover desde cualquier red:
 | ngrok                               | Túnel público para control remoto |
 
 
+## 📷 Capturas de Pantalla
+
+<p align="center">
+  <img src="docs/screenshots/login.png" width="450">
+  <img src="docs/screenshots/home.png" width="450">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/control.png" width="450">
+  <img src="docs/screenshots/simulador.png" width="450">
+</p>
+
 
