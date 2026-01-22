@@ -1,7 +1,7 @@
 # UMG++ Rover Control Language
 
-Lenguaje de programación propio (**UMG++**) para controlar un rover (carro/robot) mediante comandos de movimiento y secuencias coreografiadas.  
-Incluye un **analizador léxico, sintáctico y semántico**, un **intérprete/transpilador** y una **plataforma web** para programar y simular trayectorias.
+Lenguaje de programación propio (**UMG++**) para controlar un rover físico (carro/robot) mediante comandos de movimiento y secuencias coreografiadas.  
+Incluye un **analizador léxico, sintáctico y semántico**, un **intérprete/transpilador** y una **plataforma web** que envía instrucciones por **HTTP** a un **ESP8266**, expuesto a Internet mediante **ngrok**.
 
 ---
 
@@ -13,47 +13,50 @@ Incluye un **analizador léxico, sintáctico y semántico**, un **intérprete/tr
   - Repeticiones y secuencias
   - Coreografías predefinidas
 - Simula la trayectoria del rover
+- Envía comandos en tiempo real a un **rover físico**
+- Controla motores a través de un **ESP8266**
+- Comunicación remota por **HTTP + ngrok**
 - Registra errores y bitácoras de ejecución
 - Incluye una interfaz web con editor de código
 
 ---
 
-## 🧠 Características Técnicas
+## 🤖 Rover Físico (Hardware)
 
-- Lenguaje propio con gramática definida (UMG++)
-- Análisis léxico
-- Análisis sintáctico
-- Análisis semántico
-- Intérprete de instrucciones
-- Sistema de coreografías
-- Simulación visual del recorrido
-- Bitácora de ejecución y errores
-- Interfaz web con login y editor
+Este proyecto no es solo simulación:  
+el lenguaje **UMG++** controla un **rover real** conectado por WiFi y accesible desde Internet mediante **ngrok**.
 
----
+**Componentes principales:**
+- ESP8266 (NodeMCU)
+- Driver de motores (L298N / L293D o similar)
+- Motores DC
+- Chasis de rover
+- Fuente de energía (batería)
 
-## 🛠️ Tecnologías Usadas
-
-| Tecnología | Uso |
-|-----------|-----|
-| JavaScript / Node.js | Backend del compilador |
-| HTML / CSS / JS | Interfaz web |
-| MySQL | Almacenamiento de usuarios y bitácoras |
-| Jison / JFlex / CUP (o equivalente) | Lexer & Parser |
-| Express | Servidor web |
-| Canvas / SVG | Simulación del rover |
+**Flujo de control:**
 
 ---
 
-## 📄 Ejemplo de Código UMG++
+## 🌐 Conectividad Remota (HTTP + ngrok)
 
-```umgpp
-INICIO
-  AVANZAR 10
-  GIRAR DERECHA
-  AVANZAR 5
-  REPETIR 3 {
-    IZQUIERDA
-    AVANZAR 2
-  }
-FIN
+Para permitir el control del rover desde cualquier red:
+
+- El ESP8266 expone un endpoint HTTP (ej. `/move`)
+- Se crea un túnel público usando **ngrok**
+- El backend envía comandos HTTP al endpoint de ngrok
+- ngrok reenvía la petición al ESP8266 en la red local
+| Tecnología                          | Uso                               |
+| ----------------------------------- | --------------------------------- |
+| JavaScript / Node.js                | Backend del compilador            |
+| HTML / CSS / JS                     | Interfaz web                      |
+| MySQL                               | Usuarios y bitácoras              |
+| Jison / JFlex / CUP (o equivalente) | Lexer & Parser                    |
+| Express                             | Servidor web                      |
+| Canvas / SVG                        | Simulación del rover              |
+| ESP8266 (NodeMCU)                   | Control físico del rover          |
+| Arduino IDE                         | Firmware del ESP8266              |
+| WiFi / HTTP                         | Comunicación                      |
+| ngrok                               | Túnel público para control remoto |
+
+
+
