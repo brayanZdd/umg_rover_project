@@ -71,6 +71,7 @@ Para permitir el control del rover desde cualquier red:
 <p align="center">
   <img src="docs/screenshots/control.png" width="450">
   <img src="docs/screenshots/simulador.png" width="450">
+  <img src="docs/screenshots/credenciales.jpeg" width="350">
 </p>
 
 
