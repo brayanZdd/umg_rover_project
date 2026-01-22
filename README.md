@@ -5,7 +5,7 @@ Incluye un **analizador léxico, sintáctico y semántico**, un **intérprete/tr
 
 ---
 
-## 🚀 ¿Qué hace este proyecto?
+## ¿Qué hace este proyecto?
 
 - Permite escribir programas en archivos `.umgpp`
 - Compila e interpreta instrucciones como:
@@ -21,7 +21,7 @@ Incluye un **analizador léxico, sintáctico y semántico**, un **intérprete/tr
 
 ---
 
-## 🤖 Rover Físico (Hardware)
+## Rover Físico (Hardware)
 
 Este proyecto no es solo simulación:  
 el lenguaje **UMG++** controla un **rover real** conectado por WiFi y accesible desde Internet mediante **ngrok**.
@@ -61,7 +61,7 @@ Para permitir el control del rover desde cualquier red:
 | ngrok                               | Túnel público para control remoto |
 
 
-## 📷 Capturas de Pantalla
+## Capturas de Pantalla
 
 <p align="center">
   <img src="docs/screenshots/login.png" width="450">
