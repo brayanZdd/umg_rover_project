@@ -45,6 +45,8 @@ Para permitir el control del rover desde cualquier red:
 - Se crea un túnel público usando **ngrok**
 - El backend envía comandos HTTP al endpoint de ngrok
 - ngrok reenvía la petición al ESP8266 en la red local
+
+  
 | Tecnología                          | Uso                               |
 | ----------------------------------- | --------------------------------- |
 | JavaScript / Node.js                | Backend del compilador            |
